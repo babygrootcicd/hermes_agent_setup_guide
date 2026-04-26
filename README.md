@@ -69,3 +69,24 @@ For a deep dive into effective agent orchestration, read the [Task Management & 
 
 ## ⚙️ Configuration
 See [examples/config](examples/config) for templates to set up your `~/.hermes/config.yaml` and `.env` files.
+
+---
+
+## 🔧 Troubleshooting
+
+### `Error: Failed to start Hermes: posix_spawnp failed`
+
+**Cause**: `node-pty`'s native binary was not compiled for Electron's ABI (or was never compiled at all). This happens when the app is built without running `@electron/rebuild` first.
+
+**Fix**: Rebuild `node-pty` for Electron from inside the `app/` directory:
+
+```bash
+cd app
+npm install
+npx @electron/rebuild -f -w node-pty
+npm run build
+```
+
+This compiles `pty.node` and `spawn-helper` against the correct Electron runtime. Re-open the DMG after building.
+
+For full details on what was changed and why, see [002-fix-progress.md](docs/dev_progress/002-fix-progress.md).
