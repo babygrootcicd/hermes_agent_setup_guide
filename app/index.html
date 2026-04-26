@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Hermes Agent GUI</title>
+    <link rel="stylesheet" href="node_modules/xterm/css/xterm.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="app">
         <header>
             <h1>Hermes Agent</h1>
-            <div id="status">Connecting to Ollama...</div>
+            <div id="header-right">
+                <span id="status">Starting...</span>
+                <button type="button" id="export-btn" class="control-btn">Export Log</button>
+            </div>
         </header>
-        <main id="chat-container">
-            <div id="messages"></div>
+        <main id="terminal-container">
+            <div id="terminal"></div>
         </main>
         <footer>
             <div class="task-controls">
                 <button type="button" id="decompose-btn" class="control-btn">Decompose Task</button>
-                <button type="button" id="export-btn" class="control-btn">Export Log</button>
-                <span id="context-hint">Tip: Provide context for better task breakdown</span>
+                <input type="text" id="decompose-input" placeholder="Describe task to decompose..." autocomplete="off">
             </div>
-            <form id="chat-form">
-                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                <button type="submit">Send</button>
-            </form>
         </footer>
     </div>
+    <script src="node_modules/xterm/lib/xterm.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>

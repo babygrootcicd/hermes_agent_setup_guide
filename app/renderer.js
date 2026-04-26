@@ -1,107 +1,87 @@
-const chatForm = document.getElementById('chat-form');
-const messageInput = document.getElementById('message-input');
-const messagesContainer = document.getElementById('messages');
-const statusDisplay = document.getElementById('status');
-const decomposeBtn = document.getElementById('decompose-btn');
-
-decomposeBtn.addEventListener('click', () => {
-    const currentInput = messageInput.value.trim();
-    messageInput.value = `Please decompose this task into manageable sub-tasks: ${currentInput}`;
-    messageInput.focus();
-});
-
-function addMessage(text, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message', `${type}-message`);
-    messageDiv.textContent = text;
-    messagesContainer.appendChild(messageDiv);
-    
-    // Auto scroll to bottom
-    const main = document.querySelector('main');
-    main.scrollTop = main.scrollHeight;
+if (typeof Terminal === 'undefined') {
+    document.getElementById('terminal').textContent = 'ERROR: xterm.js failed to load. Run: npm install';
+    throw new Error('xterm Terminal not defined — run npm install in the app/ directory');
 }
 
-chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const message = messageInput.value.trim();
-    if (message) {
-        addMessage(message, 'user');
-        window.api.sendMessage(message);
-        messageInput.value = '';
-        // Reset current hermes message so the next output starts in a new box
-        currentHermesMessage = null;
-        statusDisplay.textContent = 'Waiting for Hermes...';
+const term = new Terminal({
+    cursorBlink: true,
+    fontSize: 13,
+    fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+    allowTransparency: false,
+    theme: {
+        background: '#1a1a1a',
+        foreground: '#d4d4d4',
+        cursor: '#00ff9d',
+        selectionBackground: '#00ff9d44',
     }
 });
 
-// Buffer raw PTY bytes so escape sequences aren't split across chunks before stripping
-let rawSeqBuffer = '';
+const termContainer = document.getElementById('terminal');
+term.open(termContainer);
 
-function stripAnsi(str) {
-    return str
-        // CSI: ESC [ <param bytes 0x20-0x3F>* <final byte 0x40-0x7E>
-        // Covers standard (\x1B[31m), DEC private (\x1B[?25h), etc.
-        .replace(/\x1B\[[\x20-\x3F]*[\x40-\x7E]/g, '')
-        // OSC: ESC ] ... ST(BEL or ESC\)
-        .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
-        // Other two-byte Fe escapes
-        .replace(/\x1B[@-Z\\-_]/g, '')
-        // Remaining lone ESC
-        .replace(/\x1B/g, '')
-        // Non-printable control chars (keep \n \r \t)
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+const statusDisplay  = document.getElementById('status');
+const exportBtn      = document.getElementById('export-btn');
+const decomposeBtn   = document.getElementById('decompose-btn');
+const decomposeInput = document.getElementById('decompose-input');
+
+// Calculate cols/rows from container pixel size
+function calcSize() {
+    const w = termContainer.clientWidth  || 800;
+    const h = termContainer.clientHeight || 600;
+    // xterm default cell: ~8.4px wide, ~17px tall at 13px font
+    const cols = Math.max(80,  Math.floor(w / 8.4));
+    const rows = Math.max(24, Math.floor(h / 17));
+    return { cols, rows };
 }
 
-function flushRaw(incoming) {
-    rawSeqBuffer += incoming;
-    // Hold back if buffer ends mid-escape-sequence (ESC seen but sequence not closed)
-    const incompleteEsc = /\x1B(?:\[[\x20-\x3F]*)?$/.test(rawSeqBuffer);
-    if (incompleteEsc) return '';
-    const out = stripAnsi(rawSeqBuffer);
-    rawSeqBuffer = '';
-    return out;
+// Initial resize then tell main process to start Hermes
+function init() {
+    const { cols, rows } = calcSize();
+    term.resize(cols, rows);
+    window.api.rendererReady(cols, rows);
+    statusDisplay.textContent = 'Connecting...';
 }
 
-let currentHermesMessage = null;
-let hermesBuffer = '';
+// Wait for the container to have real dimensions
+if (termContainer.clientWidth > 0) {
+    init();
+} else {
+    requestAnimationFrame(init);
+}
 
+// PTY output → xterm
 window.api.onOutput((data) => {
-    statusDisplay.textContent = 'Hermes is thinking...';
-
-    const clean = flushRaw(data);
-    if (!clean) return;
-
-    hermesBuffer += clean;
-
-    // Flush complete lines; hold the last incomplete line in the buffer
-    const lines = hermesBuffer.split(/\r?\n/);
-    hermesBuffer = lines.pop();
-
-    const toAppend = lines.join('\n') + (lines.length > 0 ? '\n' : '');
-    if (!toAppend) return;
-
-    if (!currentHermesMessage) {
-        currentHermesMessage = document.createElement('div');
-        currentHermesMessage.classList.add('message', 'hermes-message');
-        messagesContainer.appendChild(currentHermesMessage);
-    }
-
-    currentHermesMessage.textContent += toAppend;
-
-    const main = document.querySelector('main');
-    main.scrollTop = main.scrollHeight;
-});
-
-// Export raw log
-document.getElementById('export-btn').addEventListener('click', () => {
-    window.api.exportLog();
+    statusDisplay.textContent = 'Hermes is running';
+    term.write(data);
 });
 
 window.api.onError((data) => {
-    console.error('Hermes Error:', data);
-    statusDisplay.textContent = 'Error occurred';
-    addMessage(`Error: ${data}`, 'hermes');
+    statusDisplay.textContent = 'Error';
+    term.write(`\r\nError: ${data}\r\n`);
 });
 
-// Initial status
-statusDisplay.textContent = 'Ready';
+// xterm keyboard input → PTY stdin
+term.onData((data) => {
+    window.api.writeKey(data);
+});
+
+// Window resize → sync PTY size
+window.addEventListener('resize', () => {
+    const { cols, rows } = calcSize();
+    term.resize(cols, rows);
+    window.api.resize(cols, rows);
+});
+
+// Export raw log
+exportBtn.addEventListener('click', () => {
+    window.api.exportLog();
+});
+
+// Decompose task — inject text into the live terminal
+decomposeBtn.addEventListener('click', () => {
+    const text = decomposeInput.value.trim();
+    if (text) {
+        window.api.sendMessage(`Please decompose this task into manageable sub-tasks: ${text}`);
+        decomposeInput.value = '';
+    }
+});

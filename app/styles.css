@@ -1,12 +1,14 @@
+* { box-sizing: border-box; }
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #1a1a1a;
+    background: #1a1a1a;
     color: #e0e0e0;
     height: 100vh;
     display: flex;
     flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 #app {
@@ -16,126 +18,92 @@ body {
 }
 
 header {
-    background-color: #2d2d2d;
-    padding: 1rem;
+    background: #2d2d2d;
+    padding: 0.6rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #3d3d3d;
+    flex-shrink: 0;
 }
 
 header h1 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #00ff9d;
 }
 
-#status {
-    font-size: 0.8rem;
-    color: #888;
-}
-
-main {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
+#header-right {
     display: flex;
-    flex-direction: column;
-}
-
-#messages {
-    display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 1rem;
 }
 
-.message {
-    max-width: 80%;
-    padding: 0.8rem 1rem;
-    border-radius: 8px;
-    line-height: 1.4;
-    word-wrap: break-word;
-    white-space: pre-wrap;
+#status {
+    font-size: 0.75rem;
+    color: #888;
 }
 
-.user-message {
-    align-self: flex-end;
-    background-color: #007bff;
-    color: white;
+main#terminal-container {
+    flex: 1;
+    overflow: hidden;
+    padding: 4px;
+    background: #1a1a1a;
 }
 
-.hermes-message {
-    align-self: flex-start;
-    background-color: #3d3d3d;
-    color: #e0e0e0;
-    font-family: 'Courier New', Courier, monospace;
-    white-space: pre-wrap;
+#terminal {
+    width: 100%;
+    height: 100%;
+}
+
+/* xterm.js canvas needs to fill its parent */
+.xterm {
+    height: 100%;
+}
+.xterm-viewport {
+    overflow-y: auto !important;
 }
 
 footer {
-    padding: 1rem;
-    background-color: #2d2d2d;
+    padding: 0.6rem 1rem;
+    background: #2d2d2d;
     border-top: 1px solid #3d3d3d;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
+    flex-shrink: 0;
 }
 
 .task-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .control-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    background-color: #3d3d3d;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    background: #3d3d3d;
     color: #00ff9d;
     border: 1px solid #00ff9d;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
 }
 
 .control-btn:hover {
-    background-color: #00ff9d;
+    background: #00ff9d;
     color: #1a1a1a;
 }
 
-#context-hint {
-    font-size: 0.8rem;
-    color: #888;
-    font-style: italic;
-}
-
-#chat-form {
-    display: flex;
-    gap: 0.5rem;
-}
-
-#message-input {
+#decompose-input {
     flex: 1;
-    padding: 0.8rem;
+    padding: 0.35rem 0.6rem;
     border-radius: 4px;
     border: 1px solid #3d3d3d;
-    background-color: #1a1a1a;
-    color: white;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    font-size: 0.78rem;
     outline: none;
 }
 
-#message-input:focus {
+#decompose-input:focus {
     border-color: #00ff9d;
-}
-
-button {
-    padding: 0.8rem 1.5rem;
-    border-radius: 4px;
-    border: none;
-    background-color: #00ff9d;
-    color: #1a1a1a;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-button:hover {
-    background-color: #00cc7e;
 }

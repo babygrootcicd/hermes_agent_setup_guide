@@ -3,29 +3,85 @@ const path = require('path');
 const pty = require('node-pty');
 const fs = require('fs');
 
-// --- Logging Utility ---
+// --- Logging ---
 const logDir = path.join(app.getPath('home'), '.hermes', 'logs');
 const logFile = path.join(logDir, 'gui.log');
-
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
-}
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 
 function log(message) {
   const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] ${message}\n`;
+  const line = `[${timestamp}] ${message}\n`;
   console.log(message);
-  fs.appendFileSync(logFile, logMessage);
+  fs.appendFileSync(logFile, line);
 }
 
 log('--- App Starting ---');
 
 let hermesProcess = null;
-let rawOutputLog = ''; // accumulates every raw PTY byte for export
+let mainWin = null;
+let rawOutputLog = '';
+
+function findHermes() {
+  const homeDir = app.getPath('home');
+  const candidates = [
+    path.join(homeDir, '.hermes', 'bin', 'hermes'),
+    path.join(homeDir, '.local', 'bin', 'hermes'),
+    '/usr/local/bin/hermes',
+    '/opt/homebrew/bin/hermes',
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return 'hermes'; // fallback to PATH
+}
+
+function spawnHermes(win, cols, rows) {
+  if (hermesProcess) return;
+
+  const homeDir = app.getPath('home');
+  const hermesPath = findHermes();
+  log(`Spawning Hermes from: ${hermesPath}`);
+
+  const spawnEnv = {
+    ...process.env,
+    PATH: [
+      path.join(homeDir, '.hermes', 'bin'),
+      path.join(homeDir, '.local', 'bin'),
+      '/usr/local/bin',
+      '/opt/homebrew/bin',
+      process.env.PATH || ''
+    ].join(':'),
+    TERM: 'xterm-256color',
+  };
+
+  try {
+    hermesProcess = pty.spawn(hermesPath, ['chat', '-Q', '--accept-hooks', '--yolo'], {
+      name: 'xterm-256color',
+      cols: cols || 220,
+      rows: rows || 50,
+      cwd: homeDir,
+      env: spawnEnv
+    });
+
+    hermesProcess.onData((data) => {
+      rawOutputLog += data;
+      win.webContents.send('hermes-output', data);
+    });
+
+    hermesProcess.onExit(({ exitCode }) => {
+      log(`Hermes exited with code ${exitCode}`);
+      win.webContents.send('hermes-output', `\r\n[Hermes exited with code ${exitCode}]\r\n`);
+      hermesProcess = null;
+    });
+  } catch (err) {
+    log(`CRITICAL ERROR: ${err.message}`);
+    win.webContents.send('hermes-error', `Failed to start Hermes: ${err.message}`);
+  }
+}
 
 function createWindow() {
   log('Creating window...');
-  const win = new BrowserWindow({
+  mainWin = new BrowserWindow({
     width: 1000,
     height: 800,
     webPreferences: {
@@ -35,8 +91,8 @@ function createWindow() {
     }
   });
 
-  win.loadFile('index.html').catch(e => log(`Failed to load index.html: ${e.message}`));
-  // win.webContents.openDevTools();
+  mainWin.loadFile('index.html').catch(e => log(`Failed to load index.html: ${e.message}`));
+  mainWin.webContents.openDevTools();
 }
 
 app.on('ready', () => {
@@ -45,104 +101,45 @@ app.on('ready', () => {
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
 app.on('window-all-closed', () => {
-  if (hermesProcess) {
-    hermesProcess.kill();
-  }
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (hermesProcess) hermesProcess.kill();
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('quit', () => {
+  if (hermesProcess) hermesProcess.kill();
+});
+
+// Renderer signals it's ready — start Hermes
+ipcMain.on('renderer-ready', (event, { cols, rows }) => {
+  spawnHermes(mainWin, cols, rows);
+});
+
+// Raw key data from xterm → PTY stdin
+ipcMain.on('write-pty', (event, data) => {
+  if (hermesProcess) hermesProcess.write(data);
+});
+
+// Terminal resize
+ipcMain.on('resize-pty', (event, { cols, rows }) => {
+  if (hermesProcess) hermesProcess.resize(cols, rows);
+});
+
+// Programmatic message (e.g. Decompose Task button)
+ipcMain.on('send-message', (event, message) => {
   if (hermesProcess) {
-    hermesProcess.kill();
+    log(`Sending message: ${message}`);
+    hermesProcess.write(message + '\r');
   }
 });
 
+// Export raw PTY log
 ipcMain.on('export-log', () => {
   const exportPath = path.join(app.getPath('home'), '.hermes', 'logs', 'raw-chat.log');
   fs.writeFileSync(exportPath, rawOutputLog);
   log(`Raw log exported to ${exportPath}`);
   shell.showItemInFolder(exportPath);
-});
-
-ipcMain.on('send-message', (event, message) => {
-  if (!hermesProcess) {
-    let hermesPath = 'hermes';
-    
-    // Potential paths to search
-    const homeDir = app.getPath('home');
-    const searchPaths = [
-      path.join(homeDir, '.local', 'bin', 'hermes'),
-      path.join(homeDir, '.hermes', 'bin', 'hermes'),
-      '/usr/local/bin/hermes',
-      '/opt/homebrew/bin/hermes',
-      'hermes' // Fallback to PATH
-    ];
-
-    for (const p of searchPaths) {
-      if (p === 'hermes') {
-        hermesPath = p;
-        break;
-      }
-      if (fs.existsSync(p)) {
-        hermesPath = p;
-        break;
-      }
-    }
-
-    log(`Spawning Hermes in PTY from: ${hermesPath}`);
-    
-    // Use node-pty to provide a real TTY environment
-    try {
-      const spawnEnv = {
-        ...process.env,
-        PATH: [
-          path.join(homeDir, '.hermes', 'bin'),
-          path.join(homeDir, '.local', 'bin'),
-          '/usr/local/bin',
-          '/opt/homebrew/bin',
-          process.env.PATH || ''
-        ].join(':'),
-        NO_COLOR: '1',
-        TERM: 'dumb',
-        COLORTERM: ''
-      };
-
-      // Use bash -c to ensure the script and its virtualenv are handled correctly
-      hermesProcess = pty.spawn('/bin/bash', ['-c', `${hermesPath} chat -Q --accept-hooks --yolo`], {
-        name: 'xterm-color',
-        cols: 80,
-        rows: 30,
-        cwd: process.cwd(),
-        env: spawnEnv
-      });
-
-      hermesProcess.onData((data) => {
-        rawOutputLog += data;
-        event.reply('hermes-output', data);
-      });
-
-      hermesProcess.onExit(({ exitCode, signal }) => {
-        log(`Hermes process exited with code ${exitCode}`);
-        event.reply('hermes-output', `\n[Hermes exited with code ${exitCode}]\n`);
-        hermesProcess = null;
-      });
-    } catch (err) {
-      log(`CRITICAL ERROR: Failed to spawn pty: ${err.message}`);
-      event.reply('hermes-error', `Failed to start Hermes: ${err.message}`);
-    }
-  }
-
-  // Send the user message to hermes stdin via PTY
-  if (hermesProcess) {
-    log(`Sending message to Hermes: ${message}`);
-    hermesProcess.write(message + '\r'); // Use \r for PTY input
-  }
 });
