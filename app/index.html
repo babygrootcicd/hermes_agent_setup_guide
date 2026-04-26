@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hermes Agent GUI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Hermes Agent</h1>
+            <div id="status">Connecting to Ollama...</div>
+        </header>
+        <main id="chat-container">
+            <div id="messages"></div>
+        </main>
+        <footer>
+            <form id="chat-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </footer>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>

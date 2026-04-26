@@ -43,6 +43,17 @@ The goal of this project is to simplify the deployment of Hermes Agent by provid
 - [Docker](https://www.docker.com/) (Required for Hermes Agent)
 - [Ollama](https://ollama.com/) (For local LLM support)
 
+## Building the Desktop App (macOS)
+
+To build the Hermes Agent GUI application as a standalone `.dmg` for macOS:
+
+1. **Ensure you have Node.js and npm installed.**
+2. **Run the build script:**
+   ```bash
+   ./scripts/macos/build_app.sh
+   ```
+3. **Locate the output:** The generated DMG will be available in `app/dist/`.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
