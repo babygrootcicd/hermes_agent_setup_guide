@@ -1,6 +1,6 @@
 # Development Progress - Hermes Agent + Ollama Setup Guide
 
-## Overall Status: 100% Complete (Phase 1, 2, & 3 Task 4)
+## Overall Status: 100% Complete (Phase 1, 2, 3 & Task Management Integration)
 
 ### Phase 1: Core Scripts & Documentation
 - [x] scaffold-repo-structure: 建立 README、docs/、scripts/、examples/ 目錄與基礎骨架
@@ -23,3 +23,9 @@
 - [x] metrics-tracking: 建立 AI 使用量與 ROI 追蹤框架 (docs/110-metrics-tracking.md)
 - [x] retrospective-template: 建立專案迭代評估範本 (docs/dev_progress/retrospective_template.md)
 - [x] progress-documentation-phase3: 更新 Phase 3 進度與文件索引 (Task 4)
+
+### Task Management Integration
+- [x] task-decomposition-guide: 任務分解與上下文提供指引 (docs/90-task-management.md)
+- [x] context-gathering-script: 實作自動化上下文收集腳本 (scripts/common/gather_context.sh)
+- [x] task-template-examples: 建立任務範本與實作範例 (examples/task-templates/)
+- [x] progress-documentation-task-mgmt: 更新任務管理整合進度 (Task 4)
