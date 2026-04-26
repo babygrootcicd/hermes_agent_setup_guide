@@ -81,7 +81,25 @@ else
     fi
 fi
 
-# 3. Guide user to set base URL
+# 3. Check for models and offer to pull
+echo ""
+info "Checking for 'hermes3' model in Ollama..."
+if curl -s http://127.0.0.1:11434/api/tags | grep -q "hermes3"; then
+    success "'hermes3' model is already available."
+else
+    warn "'hermes3' model not found in your local Ollama."
+    read -p "Would you like to pull 'hermes3' now? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        info "Pulling 'hermes3'... this may take a few minutes."
+        ollama pull hermes3
+        success "'hermes3' pulled successfully."
+    else
+        info "Skipping model pull. Remember to run 'ollama pull hermes3' later."
+    fi
+fi
+
+# 4. Guide user to set base URL
 echo ""
 info "--- Configuration Guide ---"
 echo -e "Hermes Agent needs to know where your Ollama instance is running."
