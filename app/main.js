@@ -21,6 +21,7 @@ function log(message) {
 log('--- App Starting ---');
 
 let hermesProcess = null;
+let rawOutputLog = ''; // accumulates every raw PTY byte for export
 
 function createWindow() {
   log('Creating window...');
@@ -62,6 +63,14 @@ app.on('quit', () => {
   if (hermesProcess) {
     hermesProcess.kill();
   }
+});
+
+ipcMain.on('export-log', () => {
+  const exportPath = path.join(app.getPath('home'), '.hermes', 'logs', 'raw-chat.log');
+  fs.writeFileSync(exportPath, rawOutputLog);
+  log(`Raw log exported to ${exportPath}`);
+  const { shell } = require('electron');
+  shell.showItemInFinder(exportPath);
 });
 
 ipcMain.on('send-message', (event, message) => {
@@ -117,6 +126,7 @@ ipcMain.on('send-message', (event, message) => {
       });
 
       hermesProcess.onData((data) => {
+        rawOutputLog += data;
         event.reply('hermes-output', data);
       });
 

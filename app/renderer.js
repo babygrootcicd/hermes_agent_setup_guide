@@ -34,13 +34,32 @@ chatForm.addEventListener('submit', (e) => {
     }
 });
 
-// Strip ANSI escape codes (colors, cursor moves, etc.) from PTY output
+// Buffer raw PTY bytes so escape sequences aren't split across chunks before stripping
+let rawSeqBuffer = '';
+
 function stripAnsi(str) {
-    return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '')  // CSI sequences
-              .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences
-              .replace(/\x1B[()][AB012]/g, '')           // character set
-              .replace(/\x1B[@-Z\\-_]/g, '')             // two-byte escapes
-              .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''); // control chars except \n \r \t
+    return str
+        // CSI: ESC [ <param bytes 0x20-0x3F>* <final byte 0x40-0x7E>
+        // Covers standard (\x1B[31m), DEC private (\x1B[?25h), etc.
+        .replace(/\x1B\[[\x20-\x3F]*[\x40-\x7E]/g, '')
+        // OSC: ESC ] ... ST(BEL or ESC\)
+        .replace(/\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)/g, '')
+        // Other two-byte Fe escapes
+        .replace(/\x1B[@-Z\\-_]/g, '')
+        // Remaining lone ESC
+        .replace(/\x1B/g, '')
+        // Non-printable control chars (keep \n \r \t)
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
+
+function flushRaw(incoming) {
+    rawSeqBuffer += incoming;
+    // Hold back if buffer ends mid-escape-sequence (ESC seen but sequence not closed)
+    const incompleteEsc = /\x1B(?:\[[\x20-\x3F]*)?$/.test(rawSeqBuffer);
+    if (incompleteEsc) return '';
+    const out = stripAnsi(rawSeqBuffer);
+    rawSeqBuffer = '';
+    return out;
 }
 
 let currentHermesMessage = null;
@@ -49,11 +68,14 @@ let hermesBuffer = '';
 window.api.onOutput((data) => {
     statusDisplay.textContent = 'Hermes is thinking...';
 
-    hermesBuffer += stripAnsi(data);
+    const clean = flushRaw(data);
+    if (!clean) return;
+
+    hermesBuffer += clean;
 
     // Flush complete lines; hold the last incomplete line in the buffer
     const lines = hermesBuffer.split(/\r?\n/);
-    hermesBuffer = lines.pop(); // last element may be incomplete
+    hermesBuffer = lines.pop();
 
     const toAppend = lines.join('\n') + (lines.length > 0 ? '\n' : '');
     if (!toAppend) return;
@@ -66,9 +88,13 @@ window.api.onOutput((data) => {
 
     currentHermesMessage.textContent += toAppend;
 
-    // Auto scroll to bottom
     const main = document.querySelector('main');
     main.scrollTop = main.scrollHeight;
+});
+
+// Export raw log
+document.getElementById('export-btn').addEventListener('click', () => {
+    window.api.exportLog();
 });
 
 window.api.onError((data) => {
