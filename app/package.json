@@ -38,6 +38,15 @@
     "directories": {
       "output": "dist"
     },
+    "extraResources": [
+      {
+        "from": "../examples/config",
+        "to": "default_configs",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "files": [
       "**/*",
       "!dist"
