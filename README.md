@@ -7,6 +7,7 @@ A comprehensive, one-click setup repository for running **Hermes Agent** locally
 ### macOS
 ```bash
 ./scripts/macos/setup_hermes_ollama.sh
+ hermes chat --model hermes3
 ```
 
 ### Windows (WSL2)
