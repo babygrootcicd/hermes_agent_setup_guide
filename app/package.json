@@ -12,9 +12,9 @@
     "xterm": "^4.19.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "electron": "^30.0.0",
-    "electron-builder": "^24.13.3",
-    "@electron/rebuild": "^3.6.0"
+    "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.hermes.agent.gui",
