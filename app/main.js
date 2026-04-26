@@ -48,17 +48,26 @@ ipcMain.on('send-message', (event, message) => {
   if (!hermesProcess) {
     let hermesPath = 'hermes';
     
-    // Check common installation paths if 'hermes' is not globally available
+    // Potential paths to search
     const homeDir = app.getPath('home');
-    const defaultPath = path.join(homeDir, '.hermes', 'bin', 'hermes');
-    
-    // We can't easily check for command existence synchronously in cross-platform way without extra libs,
-    // but we can try the default path if we are on Unix.
-    if (process.platform !== 'win32') {
-      const fs = require('fs');
-      if (fs.existsSync(defaultPath)) {
-        hermesPath = defaultPath;
-        console.log(`Using hermes at: ${hermesPath}`);
+    const searchPaths = [
+      'hermes', // Check PATH
+      path.join(homeDir, '.hermes', 'bin', 'hermes'), // Default install path
+      path.join(process.resourcesPath, 'bin', 'hermes'), // Bundled path (if applicable)
+      '/usr/local/bin/hermes',
+      '/opt/homebrew/bin/hermes'
+    ];
+
+    const fs = require('fs');
+    for (const p of searchPaths) {
+      if (p === 'hermes') {
+        // We'll trust 'hermes' if it works, otherwise try absolute paths
+        continue;
+      }
+      if (fs.existsSync(p)) {
+        hermesPath = p;
+        console.log(`Using hermes binary at: ${hermesPath}`);
+        break;
       }
     }
 
