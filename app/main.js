@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const pty = require('node-pty');
 const fs = require('fs');
@@ -69,8 +69,7 @@ ipcMain.on('export-log', () => {
   const exportPath = path.join(app.getPath('home'), '.hermes', 'logs', 'raw-chat.log');
   fs.writeFileSync(exportPath, rawOutputLog);
   log(`Raw log exported to ${exportPath}`);
-  const { shell } = require('electron');
-  shell.showItemInFinder(exportPath);
+  shell.showItemInFolder(exportPath);
 });
 
 ipcMain.on('send-message', (event, message) => {
