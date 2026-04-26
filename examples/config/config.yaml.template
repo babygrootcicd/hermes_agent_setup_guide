@@ -1,0 +1,30 @@
+# Hermes Agent Configuration Template
+# Rename this file to config.yaml and update the values.
+
+# General Settings
+agent:
+  name: "MyHermesAgent"
+  description: "A local assistant powered by Ollama"
+
+# LLM Provider Settings (Ollama)
+provider:
+  type: "ollama"
+  baseUrl: "http://host.docker.internal:11434" # Default for Docker accessing host
+  model: "llama3"
+
+# Gateway Settings
+gateways:
+  telegram:
+    enabled: false
+    token: "YOUR_TELEGRAM_BOT_TOKEN_HERE"
+  discord:
+    enabled: false
+    token: "YOUR_DISCORD_BOT_TOKEN_HERE"
+  slack:
+    enabled: false
+    token: "YOUR_SLACK_BOT_TOKEN_HERE"
+
+# Storage Settings
+storage:
+  type: "local"
+  path: "./data"

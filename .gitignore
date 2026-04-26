@@ -1,1 +1,19 @@
 /.cursor
+
+# Environment variables
+.env
+*.env
+
+# Local configuration
+config.yaml
+examples/config/config.yaml
+examples/config/.env
+
+# Data and logs
+data/
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
