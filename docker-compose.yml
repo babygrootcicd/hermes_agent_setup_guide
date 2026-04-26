@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  hermes:
+    build: .
+    container_name: hermes-agent
+    volumes:
+      # Persist Hermes configuration, logs, and data
+      - hermes_data:/root/.hermes
+      # Mount current directory to /app for local file access
+      - .:/app
+    environment:
+      # URL for Ollama API on the host machine
+      - HERMES_BASE_URL=http://host.docker.internal:11434/v1
+    extra_hosts:
+      # Allow host.docker.internal to work on Linux as well
+      - "host.docker.internal:host-gateway"
+    # Enable interactive mode (standard input and TTY)
+    stdin_open: true
+    tty: true
+    # Default to chat mode, but can be overridden
+    command: chat
+
+volumes:
+  hermes_data:

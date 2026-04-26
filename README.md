@@ -33,10 +33,11 @@ The goal of this project is to simplify the deployment of Hermes Agent by provid
    git clone https://github.com/your-username/hermes_agent_setup_guide.git
    cd hermes_agent_setup_guide
    ```
-2. **Consult the Overview:** Read [docs/00-overview.md](docs/00-overview.md) to understand the system architecture.
+2. **Consult the Overview:** Read [docs/dev_progress/00-overview.md](docs/dev_progress/00-overview.md) to understand the system architecture.
 3. **Follow Platform Guides:**
-   - [macOS Setup Guide](docs/macos-setup.md) (Coming soon)
-   - [Windows Setup Guide](docs/windows-setup.md) (Coming soon)
+   - [macOS Setup Guide](docs/dev_progress/10-macos-setup.md)
+   - [Windows Setup Guide](docs/dev_progress/20-windows-wsl2-setup.md)
+   - [Docker Deployment Guide](docs/80-docker-deployment.md)
 
 ## Prerequisites
 
