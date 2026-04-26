@@ -38,3 +38,14 @@ graph LR
 - **Privacy**: By using Ollama, your data stays on your local machine and is not sent to third-party LLM providers.
 - **Cost**: Running local models is free once you have the hardware.
 - **Control**: You have full control over the agent's behavior and the models it uses.
+
+## Advanced Operations (Phase 3)
+
+For users who want to go beyond the basic setup, we provide advanced guides and tools:
+
+- **[Task Management](../90-task-management.md)**: Strategies for decomposing complex tasks and optimizing context.
+- **[Advanced Tooling](../100-advanced-tooling.md)**: Deep dive into tool integration and API usage.
+- **[Metrics & ROI Tracking](../110-metrics-tracking.md)**: Framework for tracking AI usage and calculating ROI.
+- **[Automation Scripts](../../scripts/automation/)**: Scripts for model management and updates.
+- **[Skill Library](../../examples/skills/)**: A collection of reusable skills and templates.
+- **[Project Retrospective](retrospective_template.md)**: Template for evaluating project iterations.

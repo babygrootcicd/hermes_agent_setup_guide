@@ -34,15 +34,24 @@ Located in `/scripts`. Automated scripts to check dependencies (Ollama, Hermes) 
 ### 🐳 Docker Support
 Containerized Hermes environment for isolated deployments.
 - **Run**: `docker-compose up --build`
-- **Docs**: [Docker Deployment Guide](docs/80-docker-deployment.md)
+- **Docs**: [Docker Deployment Guide](docs/dev_progress/80-docker-deployment.md)
 
 ### 📚 Documentation
-- [Overview](docs/00-overview.md)
-- [macOS Setup](docs/10-macos-setup.md)
-- [Windows/WSL2 Setup](docs/20-windows-wsl2-setup.md)
-- [Ollama Model Guide](docs/30-ollama-models.md)
-- [Gateway Setup](docs/40-gateway-setup.md)
-- [Troubleshooting](docs/60-troubleshooting.md)
+- [Overview](docs/dev_progress/00-overview.md)
+- [macOS Setup](docs/dev_progress/10-macos-setup.md)
+- [Windows/WSL2 Setup](docs/dev_progress/20-windows-wsl2-setup.md)
+- [Ollama Model Guide](docs/dev_progress/30-ollama-models.md)
+- [Gateway Setup](docs/dev_progress/40-gateway-setup.md)
+- [Troubleshooting](docs/dev_progress/60-troubleshooting.md)
+- [Docker Deployment Guide](docs/dev_progress/80-docker-deployment.md)
+
+### 🚀 Advanced Operations (Phase 3)
+- [Task Management](docs/90-task-management.md)
+- [Advanced Tooling](docs/100-advanced-tooling.md)
+- [Metrics & ROI Tracking](docs/110-metrics-tracking.md)
+- [Automation Scripts](scripts/automation/update_models.sh)
+- [Skill Library](examples/skills/README.md)
+- [Project Retrospective](docs/dev_progress/retrospective_template.md)
 
 ---
 
