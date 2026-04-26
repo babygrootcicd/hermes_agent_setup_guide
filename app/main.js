@@ -101,7 +101,10 @@ ipcMain.on('send-message', (event, message) => {
           '/usr/local/bin',
           '/opt/homebrew/bin',
           process.env.PATH || ''
-        ].join(':')
+        ].join(':'),
+        NO_COLOR: '1',
+        TERM: 'dumb',
+        COLORTERM: ''
       };
 
       // Use bash -c to ensure the script and its virtualenv are handled correctly

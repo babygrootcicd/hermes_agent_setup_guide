@@ -34,19 +34,38 @@ chatForm.addEventListener('submit', (e) => {
     }
 });
 
+// Strip ANSI escape codes (colors, cursor moves, etc.) from PTY output
+function stripAnsi(str) {
+    return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '')  // CSI sequences
+              .replace(/\x1B\][^\x07]*\x07/g, '')       // OSC sequences
+              .replace(/\x1B[()][AB012]/g, '')           // character set
+              .replace(/\x1B[@-Z\\-_]/g, '')             // two-byte escapes
+              .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ''); // control chars except \n \r \t
+}
+
 let currentHermesMessage = null;
+let hermesBuffer = '';
 
 window.api.onOutput((data) => {
     statusDisplay.textContent = 'Hermes is thinking...';
-    
+
+    hermesBuffer += stripAnsi(data);
+
+    // Flush complete lines; hold the last incomplete line in the buffer
+    const lines = hermesBuffer.split(/\r?\n/);
+    hermesBuffer = lines.pop(); // last element may be incomplete
+
+    const toAppend = lines.join('\n') + (lines.length > 0 ? '\n' : '');
+    if (!toAppend) return;
+
     if (!currentHermesMessage) {
         currentHermesMessage = document.createElement('div');
         currentHermesMessage.classList.add('message', 'hermes-message');
         messagesContainer.appendChild(currentHermesMessage);
     }
-    
-    currentHermesMessage.textContent += data;
-    
+
+    currentHermesMessage.textContent += toAppend;
+
     // Auto scroll to bottom
     const main = document.querySelector('main');
     main.scrollTop = main.scrollHeight;
