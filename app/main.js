@@ -93,13 +93,24 @@ ipcMain.on('send-message', (event, message) => {
     
     // Use node-pty to provide a real TTY environment
     try {
+      const spawnEnv = {
+        ...process.env,
+        PATH: [
+          path.join(homeDir, '.hermes', 'bin'),
+          path.join(homeDir, '.local', 'bin'),
+          '/usr/local/bin',
+          '/opt/homebrew/bin',
+          process.env.PATH || ''
+        ].join(':')
+      };
+
       // Use bash -c to ensure the script and its virtualenv are handled correctly
       hermesProcess = pty.spawn('/bin/bash', ['-c', `${hermesPath} chat -Q --accept-hooks --yolo`], {
         name: 'xterm-color',
         cols: 80,
         rows: 30,
         cwd: process.cwd(),
-        env: process.env
+        env: spawnEnv
       });
 
       hermesProcess.onData((data) => {

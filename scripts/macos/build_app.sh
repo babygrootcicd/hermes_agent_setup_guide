@@ -26,13 +26,7 @@ npm install
 
 # Rebuild native modules for Electron
 echo "🏗️  Rebuilding native modules for Electron..."
-if ./node_modules/.bin/electron-rebuild --version &> /dev/null; then
-    ./node_modules/.bin/electron-rebuild
-elif npx @electron/rebuild --version &> /dev/null; then
-    npx @electron/rebuild
-else
-    echo "⚠️  Standard rebuild tools failed, attempting build anyway (electron-builder may handle it)..."
-fi
+npx @electron/rebuild -f -w node-pty
 
 # Run build
 echo "🔨 Building DMG package..."
