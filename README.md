@@ -1,60 +1,49 @@
 # Hermes Agent + Ollama Setup Guide
 
-This repository provides a comprehensive guide and automation scripts for setting up [Hermes Agent](https://github.com/mhermes-agent/hermes) with a local [Ollama](https://ollama.com/) instance on macOS and Windows (WSL2).
+A comprehensive, one-click setup repository for running **Hermes Agent** locally with **Ollama** on macOS and Windows (WSL2). This project now includes a modern Desktop GUI and Docker support.
 
-## Overview
+## 🚀 Quick Start
 
-The goal of this project is to simplify the deployment of Hermes Agent by providing:
-- One-click installation and configuration scripts for macOS and Windows.
-- Detailed documentation for integrating local Ollama models.
-- Step-by-step guides for setting up various Gateways (Telegram, Discord, Slack, Email, etc.).
-- Validation and troubleshooting procedures.
+### macOS
+```bash
+./scripts/macos/setup_hermes_ollama.sh
+```
 
-## Key Features
+### Windows (WSL2)
+PowerShell (Run as Administrator):
+```powershell
+.\scripts\windows\setup_hermes_ollama.ps1
+```
 
-- **Automated Setup**: Leverages the official Hermes `install.sh` with added automation for environment-specific needs.
-- **Local AI Integration**: Optimized configurations for running LLMs locally via Ollama.
-- **Multi-Platform Support**: Tailored scripts for macOS and Windows (WSL2).
-- **Comprehensive Docs**: Clear explanations of architecture, data flow, and troubleshooting.
+---
 
-## Repository Structure
+## 📦 Project Components
 
-- `docs/`: Detailed documentation, starting with [00-overview.md](docs/00-overview.md).
-- `scripts/`: Platform-specific installation and setup scripts.
-  - `macos/`: Scripts for macOS users.
-  - `windows/`: Scripts for Windows (WSL2) users.
-  - `common/`: Shared utility scripts.
-- `examples/config/`: Template files for configuration.
+### 🖥️ Desktop Application (Electron)
+Located in `/app`. A modern chat interface that wraps the Hermes CLI.
+- **Build**: `./scripts/macos/build_app.sh`
+- **Output**: `app/dist/Hermes Agent-xxx.dmg`
 
-## Getting Started
+### 🛠️ Setup Scripts
+Located in `/scripts`. Automated scripts to check dependencies (Ollama, Hermes) and configure your environment.
+- `macos/`: Bash scripts for macOS.
+- `windows/`: PowerShell scripts for Windows/WSL2.
+- `common/`: Cross-platform verification scripts.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/hermes_agent_setup_guide.git
-   cd hermes_agent_setup_guide
-   ```
-2. **Consult the Overview:** Read [docs/dev_progress/00-overview.md](docs/dev_progress/00-overview.md) to understand the system architecture.
-3. **Follow Platform Guides:**
-   - [macOS Setup Guide](docs/dev_progress/10-macos-setup.md)
-   - [Windows Setup Guide](docs/dev_progress/20-windows-wsl2-setup.md)
-   - [Docker Deployment Guide](docs/80-docker-deployment.md)
+### 🐳 Docker Support
+Containerized Hermes environment for isolated deployments.
+- **Run**: `docker-compose up --build`
+- **Docs**: [Docker Deployment Guide](docs/80-docker-deployment.md)
 
-## Prerequisites
+### 📚 Documentation
+- [Overview](docs/00-overview.md)
+- [macOS Setup](docs/10-macos-setup.md)
+- [Windows/WSL2 Setup](docs/20-windows-wsl2-setup.md)
+- [Ollama Model Guide](docs/30-ollama-models.md)
+- [Gateway Setup](docs/40-gateway-setup.md)
+- [Troubleshooting](docs/60-troubleshooting.md)
 
-- [Docker](https://www.docker.com/) (Required for Hermes Agent)
-- [Ollama](https://ollama.com/) (For local LLM support)
+---
 
-## Building the Desktop App (macOS)
-
-To build the Hermes Agent GUI application as a standalone `.dmg` for macOS:
-
-1. **Ensure you have Node.js and npm installed.**
-2. **Run the build script:**
-   ```bash
-   ./scripts/macos/build_app.sh
-   ```
-3. **Locate the output:** The generated DMG will be available in `app/dist/`.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## ⚙️ Configuration
+See [examples/config](examples/config) for templates to set up your `~/.hermes/config.yaml` and `.env` files.

@@ -21,6 +21,9 @@ chatForm.addEventListener('submit', (e) => {
         addMessage(message, 'user');
         window.api.sendMessage(message);
         messageInput.value = '';
+        // Reset current hermes message so the next output starts in a new box
+        currentHermesMessage = null;
+        statusDisplay.textContent = 'Waiting for Hermes...';
     }
 });
 
@@ -28,10 +31,6 @@ let currentHermesMessage = null;
 
 window.api.onOutput((data) => {
     statusDisplay.textContent = 'Hermes is thinking...';
-    
-    // For terminal-like streaming, we append to the last message if it's from Hermes
-    // But since Hermes output can be complex, for this scaffold we'll just append.
-    // In a more advanced version, we might want to handle chunks better.
     
     if (!currentHermesMessage) {
         currentHermesMessage = document.createElement('div');
@@ -48,7 +47,8 @@ window.api.onOutput((data) => {
 
 window.api.onError((data) => {
     console.error('Hermes Error:', data);
-    // Optionally display errors in the UI
+    statusDisplay.textContent = 'Error occurred';
+    addMessage(`Error: ${data}`, 'hermes');
 });
 
 // Initial status

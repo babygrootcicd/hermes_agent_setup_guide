@@ -46,10 +46,29 @@ let hermesProcess = null;
 
 ipcMain.on('send-message', (event, message) => {
   if (!hermesProcess) {
-    // Start hermes chat if not already running
-    // We assume 'hermes' is in the PATH or we need to find it.
-    // For this prototype, we'll try 'hermes chat'
-    hermesProcess = spawn('hermes', ['chat']);
+    let hermesPath = 'hermes';
+    
+    // Check common installation paths if 'hermes' is not globally available
+    const homeDir = app.getPath('home');
+    const defaultPath = path.join(homeDir, '.hermes', 'bin', 'hermes');
+    
+    // We can't easily check for command existence synchronously in cross-platform way without extra libs,
+    // but we can try the default path if we are on Unix.
+    if (process.platform !== 'win32') {
+      const fs = require('fs');
+      if (fs.existsSync(defaultPath)) {
+        hermesPath = defaultPath;
+        console.log(`Using hermes at: ${hermesPath}`);
+      }
+    }
+
+    hermesProcess = spawn(hermesPath, ['chat']);
+
+    hermesProcess.on('error', (err) => {
+      console.error('Failed to start hermes process:', err);
+      event.reply('hermes-error', `Failed to start Hermes: ${err.message}. Ensure 'hermes' is in your PATH.`);
+      hermesProcess = null;
+    });
 
     hermesProcess.stdout.on('data', (data) => {
       event.reply('hermes-output', data.toString());
