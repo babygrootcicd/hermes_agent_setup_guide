@@ -7,9 +7,13 @@
     "start": "electron .",
     "build": "electron-builder --mac"
   },
+  "dependencies": {
+    "node-pty": "^1.1.0"
+  },
   "devDependencies": {
     "electron": "^30.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9"
   },
   "build": {
     "appId": "com.hermes.agent.gui",

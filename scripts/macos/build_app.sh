@@ -21,8 +21,14 @@ if ! command -v hermes &> /dev/null && [ ! -f "$HOME/.hermes/bin/hermes" ] && [ 
 fi
 
 # Install dependencies
-echo "📦 Installing dependencies..."
+echo "📦 Installing dependencies (including node-pty)..."
 npm install
+
+# For node-pty, we sometimes need to rebuild for Electron
+if [ -f "node_modules/.bin/electron-rebuild" ]; then
+    echo "🏗️  Rebuilding native modules for Electron..."
+    ./node_modules/.bin/electron-rebuild
+fi
 
 # Run build
 echo "🔨 Building DMG package..."
