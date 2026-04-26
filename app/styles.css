@@ -76,6 +76,34 @@ footer {
     padding: 1rem;
     background-color: #2d2d2d;
     border-top: 1px solid #3d3d3d;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.task-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.control-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    background-color: #3d3d3d;
+    color: #00ff9d;
+    border: 1px solid #00ff9d;
+}
+
+.control-btn:hover {
+    background-color: #00ff9d;
+    color: #1a1a1a;
+}
+
+#context-hint {
+    font-size: 0.8rem;
+    color: #888;
+    font-style: italic;
 }
 
 #chat-form {

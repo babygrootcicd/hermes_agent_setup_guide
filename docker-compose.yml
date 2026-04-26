@@ -9,6 +9,8 @@ services:
       - hermes_data:/root/.hermes
       # Mount current directory to /app for local file access
       - .:/app
+      # Task management workspace
+      - ./workspace:/workspace
     environment:
       # URL for Ollama API on the host machine
       - HERMES_BASE_URL=http://host.docker.internal:11434/v1

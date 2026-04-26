@@ -2,6 +2,13 @@ const chatForm = document.getElementById('chat-form');
 const messageInput = document.getElementById('message-input');
 const messagesContainer = document.getElementById('messages');
 const statusDisplay = document.getElementById('status');
+const decomposeBtn = document.getElementById('decompose-btn');
+
+decomposeBtn.addEventListener('click', () => {
+    const currentInput = messageInput.value.trim();
+    messageInput.value = `Please decompose this task into manageable sub-tasks: ${currentInput}`;
+    messageInput.focus();
+});
 
 function addMessage(text, type) {
     const messageDiv = document.createElement('div');

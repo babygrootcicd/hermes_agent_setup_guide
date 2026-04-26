@@ -55,5 +55,17 @@ Containerized Hermes environment for isolated deployments.
 
 ---
 
+## 🧠 The Hermes Workflow
+
+To get the most out of Hermes Agent, we recommend a three-step workflow:
+
+1.  **Decompose**: Break your complex goal into smaller, actionable sub-tasks. Use our [Task Templates](examples/task-templates/feature-implementation.md) to structure your requests.
+2.  **Context**: Gather the necessary files and information for the agent. Use the [`gather_context.sh`](scripts/common/gather_context.sh) script to quickly bundle relevant project context.
+3.  **Execute**: Pass the gathered context and the specific sub-task to Hermes for high-precision execution.
+
+For a deep dive into effective agent orchestration, read the [Task Management & Context Provision Guide](docs/90-task-management.md).
+
+---
+
 ## ⚙️ Configuration
 See [examples/config](examples/config) for templates to set up your `~/.hermes/config.yaml` and `.env` files.
