@@ -1,8 +1,29 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const pty = require('node-pty');
+const fs = require('fs');
+
+// --- Logging Utility ---
+const logDir = path.join(app.getPath('home'), '.hermes', 'logs');
+const logFile = path.join(logDir, 'gui.log');
+
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+
+function log(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}\n`;
+  console.log(message);
+  fs.appendFileSync(logFile, logMessage);
+}
+
+log('--- App Starting ---');
+
+let hermesProcess = null;
 
 function createWindow() {
+  log('Creating window...');
   const win = new BrowserWindow({
     width: 1000,
     height: 800,
@@ -13,18 +34,19 @@ function createWindow() {
     }
   });
 
-  win.loadFile('index.html');
+  win.loadFile('index.html').catch(e => log(`Failed to load index.html: ${e.message}`));
   // win.webContents.openDevTools();
 }
 
-app.whenReady().then(() => {
+app.on('ready', () => {
+  log('App ready');
   createWindow();
+});
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });
 
 app.on('window-all-closed', () => {
@@ -42,8 +64,6 @@ app.on('quit', () => {
   }
 });
 
-let hermesProcess = null;
-
 ipcMain.on('send-message', (event, message) => {
   if (!hermesProcess) {
     let hermesPath = 'hermes';
@@ -58,7 +78,6 @@ ipcMain.on('send-message', (event, message) => {
       'hermes' // Fallback to PATH
     ];
 
-    const fs = require('fs');
     for (const p of searchPaths) {
       if (p === 'hermes') {
         hermesPath = p;
@@ -66,37 +85,40 @@ ipcMain.on('send-message', (event, message) => {
       }
       if (fs.existsSync(p)) {
         hermesPath = p;
-        console.log(`Using hermes binary at: ${hermesPath}`);
         break;
       }
     }
 
-    console.log(`Spawning Hermes from: ${hermesPath}`);
-    // Use -Q for quiet mode to avoid terminal/banner issues in non-TTY environment
-    hermesProcess = spawn(hermesPath, ['chat', '-Q']);
+    log(`Spawning Hermes in PTY from: ${hermesPath}`);
+    
+    // Use node-pty to provide a real TTY environment
+    try {
+      hermesProcess = pty.spawn(hermesPath, ['chat', '-Q', '--accept-hooks', '--yolo'], {
+        name: 'xterm-color',
+        cols: 80,
+        rows: 30,
+        cwd: process.cwd(),
+        env: process.env
+      });
 
-    hermesProcess.on('error', (err) => {
-      console.error('Failed to start hermes process:', err);
-      event.reply('hermes-error', `Failed to start Hermes: ${err.message}. Ensure 'hermes' is in your PATH.`);
-      hermesProcess = null;
-    });
+      hermesProcess.onData((data) => {
+        event.reply('hermes-output', data);
+      });
 
-    hermesProcess.stdout.on('data', (data) => {
-      event.reply('hermes-output', data.toString());
-    });
-
-    hermesProcess.stderr.on('data', (data) => {
-      event.reply('hermes-error', data.toString());
-    });
-
-    hermesProcess.on('close', (code) => {
-      event.reply('hermes-output', `\n[Hermes exited with code ${code}]\n`);
-      hermesProcess = null;
-    });
+      hermesProcess.onExit(({ exitCode, signal }) => {
+        log(`Hermes process exited with code ${exitCode}`);
+        event.reply('hermes-output', `\n[Hermes exited with code ${exitCode}]\n`);
+        hermesProcess = null;
+      });
+    } catch (err) {
+      log(`CRITICAL ERROR: Failed to spawn pty: ${err.message}`);
+      event.reply('hermes-error', `Failed to start Hermes: ${err.message}`);
+    }
   }
 
-  // Send the user message to hermes stdin
-  if (hermesProcess && hermesProcess.stdin) {
-    hermesProcess.stdin.write(message + '\n');
+  // Send the user message to hermes stdin via PTY
+  if (hermesProcess) {
+    log(`Sending message to Hermes: ${message}`);
+    hermesProcess.write(message + '\r'); // Use \r for PTY input
   }
 });
