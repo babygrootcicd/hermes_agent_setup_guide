@@ -13,6 +13,13 @@ echo "🚀 Starting Hermes Agent macOS Build..."
 # Change to app directory
 cd "$APP_DIR"
 
+# Ensure Hermes is installed
+echo "🔍 Checking for Hermes Agent..."
+if ! command -v hermes &> /dev/null && [ ! -f "$HOME/.hermes/bin/hermes" ]; then
+    echo "⚠️  Hermes Agent not found. Running setup script..."
+    bash "$SCRIPT_DIR/setup_hermes_ollama.sh"
+fi
+
 # Install dependencies
 echo "📦 Installing dependencies..."
 npm install
