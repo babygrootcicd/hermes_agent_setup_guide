@@ -51,18 +51,18 @@ ipcMain.on('send-message', (event, message) => {
     // Potential paths to search
     const homeDir = app.getPath('home');
     const searchPaths = [
-      'hermes', // Check PATH
-      path.join(homeDir, '.hermes', 'bin', 'hermes'), // Default install path
-      path.join(process.resourcesPath, 'bin', 'hermes'), // Bundled path (if applicable)
+      path.join(homeDir, '.local', 'bin', 'hermes'),
+      path.join(homeDir, '.hermes', 'bin', 'hermes'),
       '/usr/local/bin/hermes',
-      '/opt/homebrew/bin/hermes'
+      '/opt/homebrew/bin/hermes',
+      'hermes' // Fallback to PATH
     ];
 
     const fs = require('fs');
     for (const p of searchPaths) {
       if (p === 'hermes') {
-        // We'll trust 'hermes' if it works, otherwise try absolute paths
-        continue;
+        hermesPath = p;
+        break;
       }
       if (fs.existsSync(p)) {
         hermesPath = p;
@@ -71,7 +71,9 @@ ipcMain.on('send-message', (event, message) => {
       }
     }
 
-    hermesProcess = spawn(hermesPath, ['chat']);
+    console.log(`Spawning Hermes from: ${hermesPath}`);
+    // Use -Q for quiet mode to avoid terminal/banner issues in non-TTY environment
+    hermesProcess = spawn(hermesPath, ['chat', '-Q']);
 
     hermesProcess.on('error', (err) => {
       console.error('Failed to start hermes process:', err);
