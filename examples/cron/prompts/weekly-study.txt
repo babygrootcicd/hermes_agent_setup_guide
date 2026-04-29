@@ -1,0 +1,77 @@
+# ─────────────────────────────────────────────────────────────────
+# WEEKLY CERTIFICATION STUDY REVIEW
+# Suggested cron:  0 20 * * 0   (20:00 every Sunday)
+# Toolsets needed: file, skills, memory
+# Delivery:        --deliver file:~/study/weekly-review-$(date +%F).md
+#
+# CUSTOMIZE:
+#   - CERTIFICATION: replace "CCSP" with your cert (CPSA, CRT, CISSP, etc.)
+#   - WEAK_DOMAINS: update with your specific weak areas
+#   - OUTPUT_PATH: set via --deliver flag
+#   - STUDY_LOG_PATH: path to where study notes are stored
+#   - EXAM_DATE: your target exam date
+# ─────────────────────────────────────────────────────────────────
+
+Produce a structured weekly study review for the CCSP certification [CUSTOMIZE: certification name]. Target exam date: [CUSTOMIZE: YYYY-MM-DD].
+
+Review session history and any study notes found at [CUSTOMIZE: ~/study/] to compile this week's patterns. If no notes are available, base the review on memory and ask for confirmation before assuming any data.
+
+---
+
+SECTION 1 — Domain Coverage Table
+Create a Markdown table with columns: Domain | Questions Attempted | Correct | Accuracy % | Time Spent (est.)
+
+CCSP Domains [CUSTOMIZE: replace with your cert's domains]:
+1. Cloud Concepts, Architecture and Design
+2. Cloud Data Security
+3. Cloud Platform & Infrastructure Security
+4. Cloud Application Security
+5. Cloud Security Operations
+6. Legal, Risk and Compliance
+
+Mark each domain as:
+- ✅ Strong (≥80% accuracy)
+- ⚠️ Needs work (60–79%)
+- 🔴 Weak (< 60%)
+
+SECTION 2 — Repeated Misconceptions
+List concepts answered incorrectly two or more times this week.
+For each:
+- Concept name and domain
+- What was misunderstood (the wrong assumption)
+- The correct understanding (one concise sentence)
+- The official reference (ISC² CBK chapter or exam outline section)
+
+Format as a table: Concept | Domain | Misconception | Correct Answer | Reference
+
+SECTION 3 — Exam Trap Patterns
+Identify question structures or answer patterns that caused errors.
+Examples of trap patterns:
+- "MOST important" vs "FIRST step" vs "BEST approach" question types
+- Distractor answers that are correct in general but wrong in the specific cloud context
+- Terminology traps (e.g., confusing "data owner" vs "data custodian")
+- [CUSTOMIZE: add patterns specific to your cert]
+
+List each trap as: Pattern Name | Example Question Type | How to Avoid It
+
+SECTION 4 — Next Week's Drill List
+Based on Sections 1–3, produce a prioritized drill list for next week.
+Format: numbered list, 3–5 items maximum.
+Each item:
+- Specific topic (not just "study Domain 4" — be precise: "Review OWASP Top 10 in cloud context")
+- Suggested resource (official guide chapter, practice question set, video)
+- Target: specific metric to hit by end of next week (e.g., "≥80% on Domain 4 practice set")
+
+SECTION 5 — Resources for This Week's Weak Areas
+For each 🔴 Weak domain from Section 1, list:
+- Official ISC² CBK chapter [CUSTOMIZE: your cert's official guide]
+- One recommended practice question source
+- One supplementary resource (video, blog post, cheat sheet)
+
+---
+
+OUTPUT FORMAT:
+Plain Markdown. Use ## headers for each section. Tables where specified.
+No first-person or second-person pronouns throughout.
+No filler sentences. Every line must contain actionable or factual content.
+End with a one-line progress summary: "Week N of M — [X]% of domains at ≥80% — [days] days to exam target"
