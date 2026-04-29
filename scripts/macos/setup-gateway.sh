@@ -52,13 +52,16 @@ write_env_var() {
     local key="$1"
     local value="$2"
     local env_file="$HOME/.hermes/.env"
+    local escaped_value
+
+    escaped_value="$(printf '%s' "$value" | sed 's/[&|\\]/\\&/g')"
 
     touch "$env_file"
     chmod 600 "$env_file"
 
     if grep -q "^${key}=" "$env_file" 2>/dev/null; then
         # Update existing entry
-        sed -i '' "s|^${key}=.*|${key}=${value}|" "$env_file"
+        sed -i '' "s|^${key}=.*|${key}=${escaped_value}|" "$env_file"
         info "Updated ${key} in ~/.hermes/.env"
     else
         echo "${key}=${value}" >> "$env_file"
@@ -88,8 +91,8 @@ append_config_block() {
 
     echo "" >> "$config_file"
     if [[ -f "$template_file" ]]; then
-        # Strip comment header lines from template, then append
-        grep -v "^#" "$template_file" | grep -v "^$" | head -1 >> "$config_file"
+        # Append the full example block once. The template already contains the
+        # top-level key and practical comments, so do not synthesize another key.
         cat "$template_file" >> "$config_file"
         success "Appended ${platform} gateway block to ~/.hermes/config.yaml"
     else
@@ -164,7 +167,8 @@ setup_telegram() {
     echo "  • Copy the bot token (format: 123456:ABC-DEF...)"
     echo ""
 
-    read -rp "Paste your Telegram bot token: " bot_token
+    read -rsp "Paste your Telegram bot token: " bot_token
+    echo ""
     if [[ -z "$bot_token" ]]; then
         error "Bot token cannot be empty."
         exit 1
@@ -195,7 +199,7 @@ setup_telegram() {
 
     echo ""
     read -rp "Install Telegram gateway as a launchd service (auto-start on login)? [y/N] " install_service
-    if [[ "${install_service,,}" == "y" ]]; then
+    if [[ "$install_service" =~ ^[Yy]$ ]]; then
         install_launchd_service "telegram"
     else
         info "To start the gateway manually: hermes gateway start telegram"
@@ -218,7 +222,8 @@ setup_discord() {
     echo "  • Enable: Message Content Intent (under Privileged Gateway Intents)"
     echo ""
 
-    read -rp "Paste your Discord bot token: " bot_token
+    read -rsp "Paste your Discord bot token: " bot_token
+    echo ""
     if [[ -z "$bot_token" ]]; then
         error "Bot token cannot be empty."
         exit 1
@@ -255,7 +260,7 @@ setup_discord() {
 
     echo ""
     read -rp "Install Discord gateway as a launchd service? [y/N] " install_service
-    if [[ "${install_service,,}" == "y" ]]; then
+    if [[ "$install_service" =~ ^[Yy]$ ]]; then
         install_launchd_service "discord"
     else
         info "To start manually: hermes gateway start discord"
@@ -276,7 +281,8 @@ setup_slack() {
     echo "    Scope: connections:write → copy as SLACK_APP_TOKEN (xapp-...)"
     echo ""
 
-    read -rp "Paste your Slack App-Level Token (xapp-...): " app_token
+    read -rsp "Paste your Slack App-Level Token (xapp-...): " app_token
+    echo ""
     if [[ -z "$app_token" ]]; then
         error "App token cannot be empty."
         exit 1
@@ -291,7 +297,8 @@ setup_slack() {
     echo "  • Install to Workspace → copy Bot User OAuth Token (xoxb-...)"
     echo ""
 
-    read -rp "Paste your Slack Bot Token (xoxb-...): " bot_token
+    read -rsp "Paste your Slack Bot Token (xoxb-...): " bot_token
+    echo ""
     if [[ -z "$bot_token" ]]; then
         error "Bot token cannot be empty."
         exit 1
@@ -320,7 +327,7 @@ setup_slack() {
 
     echo ""
     read -rp "Install Slack gateway as a launchd service? [y/N] " install_service
-    if [[ "${install_service,,}" == "y" ]]; then
+    if [[ "$install_service" =~ ^[Yy]$ ]]; then
         install_launchd_service "slack"
     else
         info "To start manually: hermes gateway start slack"

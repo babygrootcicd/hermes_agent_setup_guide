@@ -8,6 +8,10 @@ This guide takes you from zero to a working Hermes Agent session. Follow the sec
 
 Verify each dependency before installing.
 
+### Supported platform
+
+Hermes Agent runs on Linux, macOS, WSL2, and Android Termux. Native Windows is not supported; use WSL2 for Windows installs.
+
 ### Python 3.10 or higher
 
 ```bash

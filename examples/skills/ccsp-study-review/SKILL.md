@@ -238,6 +238,30 @@ Focus on web application security domain. Identify patterns in my wrong answers.
 
 ---
 
+## Success Criteria
+
+The study review is complete only when:
+
+- Study notes, wrong-answer logs, or the lack of usable inputs were explicitly accounted for.
+- Domain coverage is summarized in a table with studied count, wrong count, error rate, and priority.
+- Repeated misconceptions and exam trap patterns are separated instead of blended together.
+- The drill list contains no more than `STUDY_MAX_DRILL_ITEMS` focused topics.
+- Output is saved to `STUDY_OUTPUT_PATH` or the configured file delivery target.
+- Any persistent weak-domain update is phrased as a memory candidate rather than silently assumed.
+
+---
+
+## Memory Integration
+
+After each weekly review, optionally update MEMORY.md with:
+```
+Study pattern: {STUDY_CERT} weak domains on {date}: {domain list}. Repeated traps: {trap list}. Next drill focus: {topic list}.
+```
+
+Keep long wrong-answer details in the study notes path. Store only stable preferences, repeated weak domains, and recurring trap patterns in memory.
+
+---
+
 ## Wrong-Answer Log Template
 
 Create this file at `~/study/wrong-answers.md` and update it during study sessions:

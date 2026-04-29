@@ -59,8 +59,8 @@ prompt: |
 
 # ─── Delivery ──────────────────────────────────────────────────────────────
 # Saves output to a dated Markdown file rather than sending to a chat platform.
-deliver: file
-output_path: "~/study/weekly-review-{date}.md"    # {date} is substituted as YYYY-MM-DD
+# This follows the documented delivery URI form: file:/path/to/output.md
+deliver: "file:~/study/weekly-review-{date}.md"    # {date} is substituted as YYYY-MM-DD
 
 # Optionally also notify via Telegram when the file is ready:
 # also_notify: telegram
@@ -79,6 +79,5 @@ timeout: 180
 # ─── Failure Handling ──────────────────────────────────────────────────────
 on_failure:
   action: notify
-  deliver: file
-  output_path: "~/study/weekly-review-{date}-FAILED.txt"
+  deliver: "file:~/study/weekly-review-{date}-FAILED.txt"
   message: "Weekly review failed at {timestamp}. Error: {error}"

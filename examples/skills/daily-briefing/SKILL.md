@@ -159,6 +159,18 @@ English output. Max 5 items. Save to ~/briefings/today.md.
 
 ---
 
+## Success Criteria
+
+The run is complete only when:
+
+- Each configured topic was searched or explicitly marked as skipped with a reason.
+- Selected items include source links and do not exceed `BRIEFING_MAX_ITEMS` per topic.
+- Summaries follow `BRIEFING_LANGUAGE` and `BRIEFING_SUMMARY_LENGTH`.
+- Duplicate or low-relevance results were filtered before delivery.
+- The briefing was delivered to `BRIEFING_DELIVERY`, or a local fallback path was reported.
+
+---
+
 ## Memory Integration
 
 After a successful run, update MEMORY.md with:

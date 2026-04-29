@@ -1,10 +1,20 @@
-# Hermes Agent — Characteristics Documentation
+# Hermes Agent - Characteristics Documentation
 
-This directory contains detailed documentation reconstructed from research notes on Hermes Agent (by Nous Research). Each file covers one aspect of the system in depth.
+This directory contains detailed documentation reconstructed from research notes on Hermes Agent by Nous Research. It is the conceptual and setup-oriented companion to the repository's scripts, examples, and dev-progress artifacts.
 
 ---
 
-## Index
+## Start Here
+
+| Need | File |
+|------|------|
+| Install Hermes Agent and configure the first provider | [setup-guide.md](setup-guide.md) |
+| Understand what Hermes Agent is | [00-overview.md](00-overview.md) |
+| Choose Gemini, Copilot, Anthropic, OpenRouter, or Ollama | [09-provider-selection.md](09-provider-selection.md) |
+| Find storage, backup, and export locations | [06-storage-layout.md](06-storage-layout.md) |
+| Keep sessions running or resume work | [10-session-management.md](10-session-management.md) |
+
+## Characteristics Index
 
 | File | Topic | Summary |
 |------|-------|---------|
@@ -19,6 +29,50 @@ This directory contains detailed documentation reconstructed from research notes
 | [08-profile-design.md](08-profile-design.md) | Profile Design | 4-profile setup (personal/coder/security-lab/study), isolation guarantees, config examples |
 | [09-provider-selection.md](09-provider-selection.md) | Provider Selection | Provider ranking, Gemini/Copilot/Codex/Claude/Ollama setup, speed optimization |
 | [10-session-management.md](10-session-management.md) | Session Management | What persists, resume/continue, tmux, gateway as service, session export |
+
+## Repository Orientation
+
+Use these root-level resources when you move from reading the characteristics docs to configuring or validating the local setup.
+
+| Area | Location | Notes |
+|------|----------|-------|
+| Root orientation | [../../README.md](../../README.md) | Top-level map for docs, examples, scripts, Docker, app, and phase artifacts |
+| Platform setup docs | [../dev_progress](../dev_progress) | macOS, WSL2, Ollama models, gateways, config, troubleshooting, security, Docker, task management, tooling, metrics |
+| Dev-progress index | [../dev_progress/00-overview.md](../dev_progress/00-overview.md) | Implementation-focused overview |
+| Examples index | [../../examples/README.md](../../examples/README.md) | Starter examples for local Hermes configuration |
+| Scripts index | [../../scripts/README.md](../../scripts/README.md) | Install and utility script overview |
+| Desktop app | [../../app/README.md](../../app/README.md) | Electron wrapper documentation |
+| Phase markers | [../../.agent-progress](../../.agent-progress) | Worker completion artifacts |
+
+## Examples Map
+
+| Directory | Contents |
+|-----------|----------|
+| [../../examples/config](../../examples/config) | Base `config.yaml`, `.env`, and provider snippets for Anthropic, Copilot, Gemini, Ollama, and OpenRouter |
+| [../../examples/gateway](../../examples/gateway) | Telegram, Discord, and Slack gateway config examples |
+| [../../examples/cron](../../examples/cron) | Daily briefing, disk monitor, GitHub triage, and study-review jobs with prompt files |
+| [../../examples/memory](../../examples/memory) | Starter `MEMORY.md` and `USER.md` files |
+| [../../examples/profiles](../../examples/profiles) | Profile-specific configuration and memory examples |
+| [../../examples/security](../../examples/security) | Docker sandbox, security baseline, and threat checklist |
+| [../../examples/skills](../../examples/skills) | Reusable skill examples and skill index |
+| [../../examples/task-templates](../../examples/task-templates) | Feature implementation prompt template |
+
+## Scripts Map
+
+| Directory | Scripts |
+|-----------|---------|
+| [../../scripts/macos](../../scripts/macos) | macOS setup, desktop app build, debug, gateway setup, Gemini provider setup |
+| [../../scripts/windows](../../scripts/windows) | Windows/WSL2 setup script |
+| [../../scripts/common](../../scripts/common) | Verify, backup, export sessions, gather context, scaffold Hermes directory |
+| [../../scripts/automation](../../scripts/automation) | Model update automation |
+
+## Phase Artifacts
+
+| Location | Purpose |
+|----------|---------|
+| [../dev_progress/progress.md](../dev_progress/progress.md) | Dev-progress status tracking |
+| [progress.md](progress.md) | Characteristics documentation progress tracking |
+| [../../.agent-progress](../../.agent-progress) | Worker phase done markers |
 
 ---
 

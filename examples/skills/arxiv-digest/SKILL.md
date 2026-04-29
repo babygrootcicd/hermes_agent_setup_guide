@@ -247,6 +247,19 @@ hermes cron create "0 10 * * 1" \
 
 ---
 
+## Success Criteria
+
+The digest is complete only when:
+
+- Every configured category was queried or marked skipped with the reason.
+- Candidate papers were filtered by `ARXIV_DATE_WINDOW` and deduplicated by arXiv ID.
+- Selected papers include title, authors, category, submission date, contribution, significance, method, and links.
+- Relevance scoring considered configured keywords and did not exceed `ARXIV_MAX_PAPERS`.
+- The full digest was saved to `ARXIV_OUTPUT_PATH` or the configured delivery fallback.
+- The condensed delivery, if enabled, points back to the full digest path.
+
+---
+
 ## Memory Integration
 
 After each run, optionally update MEMORY.md:

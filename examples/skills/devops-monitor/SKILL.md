@@ -257,6 +257,19 @@ hermes cron create "0 */2 * * *" \
 
 ---
 
+## Success Criteria
+
+The monitoring or triage run is complete only when:
+
+- Each configured service was checked or explicitly marked unreachable with evidence.
+- Disk checks distinguish normal, warning, threshold breach, and missing mount states.
+- Alert payloads are grouped, deduplicated, and checked against known false positives.
+- The report includes root cause hypotheses, evidence, first response steps, and escalation criteria.
+- No destructive cleanup action is executed without explicit user confirmation.
+- The alert or incident report was delivered and, when configured, written to `MONITOR_INCIDENT_PATH`.
+
+---
+
 ## Memory Integration
 
 After each alert triage, update MEMORY.md with:
