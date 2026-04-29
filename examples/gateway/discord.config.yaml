@@ -1,0 +1,81 @@
+# Discord Gateway Configuration
+# Paste this block into your ~/.hermes/config.yaml under the top-level key `discord:`
+#
+# Prerequisites:
+#   1. Go to https://discord.com/developers/applications → New Application
+#   2. Bot tab → Add Bot → copy token → set: export DISCORD_BOT_TOKEN="your_token"
+#   3. OAuth2 → URL Generator: scopes = bot, permissions = Send Messages, Read Message History,
+#      Use Slash Commands, Embed Links, Attach Files
+#   4. Enable "Message Content Intent" under Bot → Privileged Gateway Intents
+#   5. Add DISCORD_BOT_TOKEN to ~/.hermes/.env
+
+discord:
+  # ─── Authentication ───────────────────────────────────────────────────────
+  # Your bot token from the Discord Developer Portal. Never hardcode.
+  bot_token: "${DISCORD_BOT_TOKEN}"
+
+  # ─── Access Control ───────────────────────────────────────────────────────
+  # Numeric Discord guild (server) IDs the bot is allowed to operate in.
+  # Right-click a server name → Copy Server ID (requires Developer Mode enabled in settings).
+  allowed_guild_ids:
+    - "1234567890123456789"    # replace with your server ID
+
+  # Specific text channel IDs the bot will respond in.
+  # Right-click a channel → Copy Channel ID.
+  # Leave empty to allow all channels in allowed guilds.
+  allowed_channel_ids:
+    - "9876543210987654321"    # e.g. #hermes-agent channel
+    # - "1111111111111111111"  # add more channels as needed
+
+  # Role IDs whose members are permitted to interact with the bot.
+  # Right-click a role in Server Settings → Copy Role ID.
+  # If empty, all server members in allowed channels can interact.
+  allowed_role_ids: []
+    # - "2222222222222222222"  # e.g. "admins" role
+    # - "3333333333333333333"  # e.g. "devops" role
+
+  # ─── Response Formatting ──────────────────────────────────────────────────
+  # Discord supports rich embeds for structured output.
+  # When true, long responses are sent as embeds with title, description, fields.
+  use_embeds: true
+
+  # Embed colour (hex, without #). Used for normal responses.
+  embed_color: "5865F2"      # Discord blurple
+
+  # Embed colour for error/failure messages.
+  embed_error_color: "ED4245" # Discord red
+
+  # Discord message character limit is 2000 (embed description up to 4096).
+  # Hermes splits longer plain messages automatically.
+  message_length_limit: 2000
+
+  # ─── Slash Commands ───────────────────────────────────────────────────────
+  # Register Discord slash commands (e.g. /hermes ask, /hermes memory).
+  # Requires applications.commands scope in OAuth2.
+  slash_commands_enabled: true
+
+  # ─── Agent Behaviour ──────────────────────────────────────────────────────
+  toolsets:
+    - web
+    - terminal
+    - skills
+    - memory
+    - github
+    # - browser_automation   # uncomment only if needed
+
+  max_turns: 20
+
+  # Seconds before a timeout message is sent.
+  response_timeout: 180
+
+  # ─── Cron Delivery ────────────────────────────────────────────────────────
+  # Default channel ID for cron job output delivery.
+  default_delivery_channel_id: "9876543210987654321"   # replace with your channel ID
+
+  # ─── Mention Behaviour ────────────────────────────────────────────────────
+  # If true, bot only responds when mentioned (@BotName) or via slash command.
+  # Recommended: true in shared servers to avoid noise.
+  mention_required: true
+
+  # ─── Typing Indicator ─────────────────────────────────────────────────────
+  show_typing_indicator: true

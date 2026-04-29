@@ -1,0 +1,74 @@
+# Telegram Gateway Configuration
+# Paste this block into your ~/.hermes/config.yaml under the top-level key `telegram:`
+#
+# Prerequisites:
+#   1. Create a bot via @BotFather on Telegram → /newbot
+#   2. Copy the bot token and set: export TELEGRAM_BOT_TOKEN="your_token"
+#   3. Find your Telegram user ID: message @userinfobot or @getidsbot
+#   4. Add TELEGRAM_BOT_TOKEN to ~/.hermes/.env
+
+telegram:
+  # ─── Authentication ───────────────────────────────────────────────────────
+  # Your bot token from @BotFather. Always reference via env var — never hardcode.
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+
+  # ─── Access Control ───────────────────────────────────────────────────────
+  # Numeric Telegram user IDs allowed to interact with the bot.
+  # To find your ID: message @userinfobot — it replies with your numeric ID.
+  # IMPORTANT: if this list is empty, the bot responds to everyone — always set it.
+  allowed_users:
+    - 123456789        # replace with your numeric Telegram user ID
+    # - 987654321      # add more trusted users here
+
+  # Numeric chat IDs for allowed group chats.
+  # To find a group chat ID: add @getidsbot to the group, then /start.
+  # Negative numbers (e.g. -1001234567890) indicate supergroups/channels.
+  # Leave empty to disable group chat access.
+  allowed_chat_ids: []
+    # - -1001234567890   # example supergroup
+
+  # ─── Delivery Mode ────────────────────────────────────────────────────────
+  # polling: Hermes repeatedly asks Telegram for new messages (simpler, no public URL needed)
+  # webhook: Telegram pushes messages to your server (lower latency, requires HTTPS endpoint)
+  mode: polling    # recommended default; change to "webhook" only if you have a public HTTPS server
+
+  # Only used when mode: webhook
+  # webhook_url: "https://your-server.example.com/hermes/telegram/webhook"
+  # webhook_secret: "${TELEGRAM_WEBHOOK_SECRET}"
+
+  # ─── Response Formatting ──────────────────────────────────────────────────
+  # MarkdownV2: Supports bold, italic, code blocks, links. Special chars must be escaped.
+  # HTML:       Supports <b>, <i>, <code>, <pre>, <a>. Easier to generate programmatically.
+  # plain:      No formatting. Safest but least readable for code output.
+  parse_mode: MarkdownV2
+
+  # Telegram hard limit is 4096 characters per message.
+  # Hermes will split longer responses into multiple messages automatically.
+  message_length_limit: 4096
+
+  # ─── Agent Behaviour ──────────────────────────────────────────────────────
+  # Tools available to the agent when responding via Telegram.
+  # Keep this minimal to reduce first-token latency on mobile use.
+  toolsets:
+    - web
+    - terminal
+    - skills
+    - memory
+    # - browser_automation   # uncomment only if needed; increases latency
+    # - github               # uncomment for GitHub-related commands via Telegram
+
+  # Maximum number of agent turns per user message.
+  # Higher = more autonomous but slower and more expensive.
+  max_turns: 15
+
+  # Seconds to wait for agent to produce a response before sending a timeout message.
+  response_timeout: 120
+
+  # ─── Cron Delivery ────────────────────────────────────────────────────────
+  # When cron jobs use --deliver telegram, they send to this chat ID by default.
+  # Set to your personal chat ID (same as your user ID for direct messages).
+  default_delivery_chat_id: 123456789   # replace with your user ID
+
+  # ─── Typing Indicator ─────────────────────────────────────────────────────
+  # Show "typing..." while the agent is processing. Recommended for UX.
+  show_typing_indicator: true
