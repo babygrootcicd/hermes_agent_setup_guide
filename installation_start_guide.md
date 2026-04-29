@@ -76,6 +76,7 @@ What this script does:
 Optional safe scaffold for `~/.hermes` structure:
 
 ```bash
+chmod +x ./scripts/common/scaffold-hermes-dir.sh
 ./scripts/common/scaffold-hermes-dir.sh
 ```
 
@@ -143,7 +144,7 @@ hermes model
 #### English
 
 ```bash
-hermes chat --provider custom --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
 ```
 
 Then test session persistence:
@@ -156,7 +157,7 @@ hermes sessions list
 #### 繁體中文
 
 ```bash
-hermes chat --provider custom --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
 ```
 
 接著測試 session 延續：
@@ -301,13 +302,13 @@ hermes model
 #### English
 
 ```bash
-hermes chat --provider custom --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
 ```
 
 #### 繁體中文
 
 ```bash
-hermes chat --provider custom --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
 ```
 
 ### 3.4 Verify on Windows + WSL

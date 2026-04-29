@@ -124,7 +124,7 @@ CONFIG_CONTENT='# Hermes Agent Configuration
 # Full reference: https://hermes-agent.nousresearch.com/docs/user-guide/configuration
 
 model:
-  provider: ""        # e.g. google-gemini-cli | gemini | copilot | anthropic | custom
+  provider: ""        # e.g. auto | gemini | copilot | anthropic | openrouter
   default: ""         # e.g. gemini-2.5-flash | gpt-4o | claude-sonnet-4-5
   context_length: 32768
   # base_url: http://localhost:11434/v1

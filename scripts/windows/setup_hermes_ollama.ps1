@@ -137,7 +137,7 @@ Write-Info "--- Verification ---"
 Write-Host "1. Restart your WSL terminal or run 'source ~/.bashrc'."
 Write-Host "2. Pull model: 'ollama pull $DefaultModel' (on Windows or WSL)."
 Write-Host "3. Configure provider: 'hermes model' (inside WSL)."
-Write-Host "4. Start chat: 'hermes chat --provider custom --model $DefaultModel --toolsets terminal,skills --max-turns 12'."
+Write-Host "4. Start chat: 'hermes chat --model $DefaultModel --toolsets terminal,skills --max-turns 12'."
 
 Write-Host ""
 Write-Info "--- Common Windows/WSL Errors ---"
