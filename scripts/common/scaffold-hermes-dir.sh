@@ -21,6 +21,17 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}    $1"; }
 error()   { echo -e "${RED}[ERROR]${NC}   $1"; exit 1; }
 section() { echo -e "\n${CYAN}${BOLD}── $1 ──${NC}"; }
 
+expand_home_path() {
+    local path="$1"
+    if [[ "$path" == "~" ]]; then
+        printf '%s\n' "$HOME"
+    elif [[ "$path" == "~/"* ]]; then
+        printf '%s\n' "$HOME/${path#"~/"}"
+    else
+        printf '%s\n' "$path"
+    fi
+}
+
 # --- Resolve repo root (location of this script's repo) ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -58,7 +69,7 @@ create_file_if_missing() {
     local content="$2"
     if [[ ! -f "$path" ]]; then
         mkdir -p "$(dirname "$path")"
-        printf '%s\n' "$content" > "$path"
+        (umask 077 && printf '%s\n' "$content" > "$path")
         success "$path"
     else
         skip "$path"
@@ -70,13 +81,24 @@ copy_template() {
     local src="$1"
     local dest="$2"
     if [[ -f "$src" && ! -f "$dest" ]]; then
-        cp "$src" "$dest"
+        (umask 077 && cp "$src" "$dest")
         success "$dest (copied from template)"
     elif [[ ! -f "$src" ]]; then
         : # source template doesn't exist yet — handled by create_file_if_missing
     else
         skip "$dest"
     fi
+}
+
+append_line_once() {
+    local file="$1"
+    local line="$2"
+    if [[ -f "$file" ]] && grep -Fqx "$line" "$file"; then
+        skip "$file already contains: $line"
+        return
+    fi
+    (umask 077 && printf '%s\n' "$line" >> "$file")
+    success "Added to $file: $line"
 }
 
 # ============================================================
@@ -94,20 +116,22 @@ make_dir "$HERMES_DIR/profiles"
 # ============================================================
 section "config.yaml"
 # ============================================================
+CONFIG_TEMPLATE_SRC="$REPO_ROOT/examples/config/config.yaml.template"
+copy_template "$CONFIG_TEMPLATE_SRC" "$HERMES_DIR/config.yaml"
+
 CONFIG_CONTENT='# Hermes Agent Configuration
-# Run "hermes model" to configure your LLM provider interactively.
+# Run "hermes model" to configure your provider interactively.
 # Full reference: https://hermes-agent.nousresearch.com/docs/user-guide/configuration
 
 model:
-  provider: ""       # e.g. google-gemini-cli | copilot | anthropic | custom
-  default: ""        # e.g. gemini-2.5-flash | gpt-4o | claude-sonnet-4-5
+  provider: ""        # e.g. google-gemini-cli | gemini | copilot | anthropic | custom
+  default: ""         # e.g. gemini-2.5-flash | gpt-4o | claude-sonnet-4-5
   context_length: 32768
-  # For custom/Ollama endpoints:
   # base_url: http://localhost:11434/v1
   # api_key: ollama
 
 terminal:
-  backend: local     # local | docker | modal
+  backend: local      # local | docker | modal
   timeout: 180
 
 memory:
@@ -117,44 +141,81 @@ memory:
 agent:
   max_turns: 20
 
-# Uncomment to restrict toolsets
-# toolsets:
-#   enabled:
-#     - terminal
-#     - web
-#     - skills
-#   disabled:
-#     - browser_automation
-#     - code_execution
+toolsets:
+  enabled:
+    - terminal
+    - skills
+    - memory
+  disabled:
+    - browser_automation
+    - code_execution
 
-# delegation:
-#   max_concurrent_children: 2
-#   max_spawn_depth: 2'
+storage:
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2'
 
 create_file_if_missing "$HERMES_DIR/config.yaml" "$CONFIG_CONTENT"
 
 # ============================================================
 section ".env (API Keys)"
 # ============================================================
+ENV_TEMPLATE_SRC="$REPO_ROOT/examples/config/.env.template"
+copy_template "$ENV_TEMPLATE_SRC" "$HERMES_DIR/.env"
+
 ENV_CONTENT='# Hermes Agent — API Keys & Tokens
 # This file is NEVER injected into prompts.
 # Keep it out of all version control and shared backups.
 
 # LLM Providers
-# GOOGLE_API_KEY=
-# ANTHROPIC_API_KEY=
-# OPENAI_API_KEY=
+# GOOGLE_API_KEY=your_key_here
+# ANTHROPIC_API_KEY=your_key_here
+# OPENAI_API_KEY=your_key_here
+# OPENROUTER_API_KEY=your_key_here
 
 # Messaging Gateways
-# TELEGRAM_BOT_TOKEN=
-# DISCORD_BOT_TOKEN=
-# SLACK_BOT_TOKEN=
+# TELEGRAM_BOT_TOKEN=your_token_here
+# DISCORD_BOT_TOKEN=your_token_here
+# SLACK_BOT_TOKEN=your_token_here
 
 # Other Integrations
-# GITHUB_TOKEN=
-# OPENROUTER_API_KEY='
+# GITHUB_TOKEN=your_token_here'
 
 create_file_if_missing "$HERMES_DIR/.env" "$ENV_CONTENT"
+
+# ============================================================
+section "Storage Files"
+# ============================================================
+create_file_if_missing "$HERMES_DIR/auth.json" "{}"
+create_file_if_missing "$HERMES_DIR/cron/jobs.yaml" "jobs: []"
+create_file_if_missing "$HERMES_DIR/logs/agent.log" ""
+create_file_if_missing "$HERMES_DIR/logs/gateway.log" ""
+create_file_if_missing "$HERMES_DIR/logs/error.log" ""
+create_file_if_missing "$HERMES_DIR/logs/cron.log" ""
+
+STATE_DB="$HERMES_DIR/state.db"
+if [[ -f "$STATE_DB" ]]; then
+    skip "$STATE_DB"
+else
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - <<PYEOF
+import sqlite3
+db_path = r"$STATE_DB"
+con = sqlite3.connect(db_path)
+con.execute("PRAGMA journal_mode=WAL;")
+con.execute("PRAGMA foreign_keys=ON;")
+con.commit()
+con.close()
+PYEOF
+        success "$STATE_DB (initialized with SQLite WAL)"
+    else
+        create_file_if_missing "$STATE_DB" ""
+        warn "python3 not found; state.db created as empty file (WAL not initialized)"
+    fi
+fi
 
 # ============================================================
 section "Memory Templates"
@@ -212,26 +273,22 @@ section "Permissions"
 # ============================================================
 chmod 700 "$HERMES_DIR"
 chmod 600 "$HERMES_DIR/.env"
-[[ -f "$HERMES_DIR/auth.json" ]] && chmod 600 "$HERMES_DIR/auth.json"
-info "Permissions set: ~/.hermes/ (700), .env (600)"
+chmod 600 "$HERMES_DIR/auth.json"
+chmod 600 "$HERMES_DIR/state.db" "$HERMES_DIR/cron/jobs.yaml"
+chmod 600 "$HERMES_DIR"/logs/*.log
+info "Permissions set: ~/.hermes/ (700), secrets/state/logs (600)"
 
 # ============================================================
 section "~/.gitignore Safety Net"
 # ============================================================
 GITIGNORE="$HOME/.gitignore"
-add_to_gitignore() {
-    local entry="$1"
-    if [[ -f "$GITIGNORE" ]] && grep -qF "$entry" "$GITIGNORE"; then
-        skip "~/.gitignore already contains: $entry"
-    else
-        echo "$entry" >> "$GITIGNORE"
-        success "Added to ~/.gitignore: $entry"
-    fi
-}
-add_to_gitignore ".hermes/.env"
-add_to_gitignore ".hermes/auth.json"
-add_to_gitignore ".hermes/state.db"
-add_to_gitignore ".hermes/sessions/"
+touch "$GITIGNORE"
+append_line_once "$GITIGNORE" ".hermes/.env"
+append_line_once "$GITIGNORE" ".hermes/auth.json"
+append_line_once "$GITIGNORE" ".hermes/state.db"
+append_line_once "$GITIGNORE" ".hermes/sessions/"
+append_line_once "$GITIGNORE" ".hermes/logs/"
+append_line_once "$GITIGNORE" ".hermes/cron/outputs/"
 
 # ============================================================
 section "Summary"

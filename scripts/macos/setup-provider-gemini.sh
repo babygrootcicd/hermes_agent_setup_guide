@@ -21,6 +21,81 @@ step()    { echo -e "\n${CYAN}==> $*${NC}"; }
 HERMES_DIR="${HOME}/.hermes"
 HERMES_ENV="${HERMES_DIR}/.env"
 HERMES_CONFIG="${HERMES_DIR}/config.yaml"
+DEFAULT_PROVIDER="gemini"
+DEFAULT_MODEL="gemini-2.5-flash"
+DEFAULT_CONTEXT_LENGTH="32768"
+
+upsert_env_var() {
+  local key="$1"
+  local value="$2"
+  local file="$3"
+  local escaped_value
+
+  mkdir -p "$(dirname "${file}")"
+  touch "${file}"
+  chmod 600 "${file}" 2>/dev/null || true
+
+  escaped_value=$(printf '%s' "${value}" | sed -e 's/[&|\\]/\\&/g')
+  if grep -q "^${key}=" "${file}" 2>/dev/null; then
+    sed -i '' "s|^${key}=.*|${key}=${escaped_value}|" "${file}"
+  else
+    printf '%s=%s\n' "${key}" "${value}" >> "${file}"
+  fi
+}
+
+write_model_config() {
+  local provider="$1"
+  local model="$2"
+  local context_length="$3"
+  local tmp_file
+
+  mkdir -p "${HERMES_DIR}"
+  touch "${HERMES_CONFIG}"
+
+  tmp_file="$(mktemp "${TMPDIR:-/tmp}/hermes-config.XXXXXX")"
+  awk -v provider="${provider}" -v model="${model}" -v context="${context_length}" '
+    function emit_model_block() {
+      print "model:"
+      print "  provider: " provider
+      print "  default: " model
+      print "  api_key: \"${GOOGLE_API_KEY}\""
+      print "  context_length: " context
+    }
+    BEGIN {
+      in_model_block = 0
+      replaced = 0
+    }
+    {
+      if ($0 ~ /^model:[[:space:]]*$/) {
+        if (!replaced) {
+          emit_model_block()
+          replaced = 1
+        }
+        in_model_block = 1
+        next
+      }
+
+      if (in_model_block) {
+        if ($0 ~ /^[A-Za-z_][A-Za-z0-9_-]*:[[:space:]]*$/) {
+          in_model_block = 0
+          print $0
+        }
+        next
+      }
+
+      print $0
+    }
+    END {
+      if (!replaced) {
+        if (NR > 0) {
+          print ""
+        }
+        emit_model_block()
+      }
+    }
+  ' "${HERMES_CONFIG}" > "${tmp_file}"
+  mv "${tmp_file}" "${HERMES_CONFIG}"
+}
 
 # ── Header ────────────────────────────────────────────────────────────────────
 echo -e "${GREEN}"
@@ -71,53 +146,19 @@ case "${CHOICE^^}" in
     echo "Get your free API key at:"
     echo -e "  ${CYAN}https://aistudio.google.com/apikey${NC}"
     echo ""
-    read -rp "Paste your Gemini API key here: " API_KEY
+    read -rsp "Paste your Gemini API key here: " API_KEY
+    echo ""
     if [[ -z "${API_KEY}" ]]; then
       error "No API key entered. Aborting."
     fi
 
-    # Append to .env (do not overwrite other keys)
-    if grep -q "^GOOGLE_API_KEY=" "${HERMES_ENV}" 2>/dev/null; then
-      warn "GOOGLE_API_KEY already present in ${HERMES_ENV} — updating."
-      sed -i '' "s|^GOOGLE_API_KEY=.*|GOOGLE_API_KEY=${API_KEY}|" "${HERMES_ENV}"
-    else
-      echo "GOOGLE_API_KEY=${API_KEY}" >> "${HERMES_ENV}"
-    fi
+    upsert_env_var "GOOGLE_API_KEY" "${API_KEY}" "${HERMES_ENV}"
     success "API key written to ${HERMES_ENV}"
 
-    PROVIDER="gemini"
-    MODEL="gemini-2.5-flash"
-
-    # Write config block
-    if [[ -f "${HERMES_CONFIG}" ]] && grep -q "^model:" "${HERMES_CONFIG}"; then
-      warn "${HERMES_CONFIG} already has a model section — please merge manually:"
-      echo ""
-      echo "model:"
-      echo "  provider: gemini"
-      echo "  default: gemini-2.5-flash"
-      echo "  api_key: \"\${GOOGLE_API_KEY}\""
-      echo "  context_length: 32768"
-    else
-      cat >> "${HERMES_CONFIG}" <<'YAML'
-
-model:
-  provider: gemini
-  default: gemini-2.5-flash
-  api_key: "${GOOGLE_API_KEY}"
-  context_length: 32768
-
-agent:
-  max_turns: 20
-
-toolsets:
-  enabled:
-    - terminal
-    - web
-    - skills
-    - memory
-YAML
-      success "Config written to ${HERMES_CONFIG}"
-    fi
+    PROVIDER="${DEFAULT_PROVIDER}"
+    MODEL="${DEFAULT_MODEL}"
+    write_model_config "${PROVIDER}" "${MODEL}" "${DEFAULT_CONTEXT_LENGTH}"
+    success "Config updated in ${HERMES_CONFIG}"
     ;;
 
   B)
@@ -135,7 +176,7 @@ YAML
     fi
 
     PROVIDER="google-gemini-cli"
-    MODEL="gemini-2.5-flash"
+    MODEL="${DEFAULT_MODEL}"
 
     info "Launching hermes model wizard — follow the prompts to complete OAuth..."
     hermes model
@@ -152,17 +193,23 @@ step "Running smoke test"
 echo ""
 info "Sending test message to ${PROVIDER} / ${MODEL} ..."
 echo ""
-if hermes chat \
-    --provider "${PROVIDER}" \
-    --model    "${MODEL}" \
-    --max-turns 1 \
-    --toolsets skills \
-    --prompt   "Reply with exactly: Gemini is working"; then
-  echo ""
-  success "Smoke test passed."
+if hermes chat --help 2>/dev/null | grep -q -- "--prompt"; then
+  if hermes chat \
+      --provider "${PROVIDER}" \
+      --model "${MODEL}" \
+      --max-turns 1 \
+      --toolsets skills \
+      --prompt "Reply with exactly: Gemini is working"; then
+    echo ""
+    success "Smoke test passed."
+  else
+    echo ""
+    warn "Smoke test exited non-zero — check the output above for errors."
+  fi
 else
   echo ""
-  warn "Smoke test exited non-zero — check the output above for errors."
+  warn "Skipping automated smoke test: this Hermes build does not expose --prompt."
+  info "Run manually: hermes chat --provider ${PROVIDER} --model ${MODEL} --toolsets terminal,skills"
 fi
 
 # ── 5. Next steps ─────────────────────────────────────────────────────────────

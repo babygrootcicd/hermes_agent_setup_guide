@@ -1,6 +1,10 @@
 # scripts/windows/setup_hermes_ollama.ps1
 # Windows/WSL2 setup script for Hermes Agent + Ollama
 
+$DefaultOllamaUrl = "http://127.0.0.1:11434/v1"
+$DefaultModel = "qwen2.5-coder:7b"
+$DefaultContextLength = "32768"
+
 # --- UI Helpers ---
 function Write-Info ($Message) { Write-Host "[INFO] $Message" -ForegroundColor Blue }
 function Write-Success ($Message) { Write-Host "[SUCCESS] $Message" -ForegroundColor Green }
@@ -112,12 +116,28 @@ if ($hostIP) {
     Write-Host "   export HERMES_BASE_URL='http://\$(hostname).local:11434/v1'" -ForegroundColor Cyan
 }
 
+Write-Host ""
+Write-Info "--- Hermes Provider Setup (inside WSL) ---"
+Write-Host "Run: hermes model"
+Write-Host "Select: Custom endpoint"
+Write-Host "Use:"
+if ($hostIP) {
+    Write-Host "  URL:            http://$($hostIP.Trim()):11434/v1" -ForegroundColor Cyan
+} else {
+    Write-Host "  URL:            $DefaultOllamaUrl" -ForegroundColor Cyan
+}
+Write-Host "  API key:        ollama" -ForegroundColor Cyan
+Write-Host "  Model:          $DefaultModel" -ForegroundColor Cyan
+Write-Host "  Context length: $DefaultContextLength" -ForegroundColor Cyan
+Write-Warning "Avoid hermes3 for agentic tool use; prefer qwen2.5-coder models."
+
 # 6. Verification and Troubleshooting
 Write-Host ""
 Write-Info "--- Verification ---"
 Write-Host "1. Restart your WSL terminal or run 'source ~/.bashrc'."
-Write-Host "2. Pull the model: 'ollama pull hermes3' (on Windows or WSL)."
-Write-Host "3. Start chat: 'hermes chat --model hermes3'."
+Write-Host "2. Pull model: 'ollama pull $DefaultModel' (on Windows or WSL)."
+Write-Host "3. Configure provider: 'hermes model' (inside WSL)."
+Write-Host "4. Start chat: 'hermes chat --provider custom --model $DefaultModel --toolsets terminal,skills --max-turns 12'."
 
 Write-Host ""
 Write-Info "--- Common Windows/WSL Errors ---"

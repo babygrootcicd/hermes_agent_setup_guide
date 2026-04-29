@@ -5,7 +5,8 @@
 # Usage:
 #   ./export-sessions.sh                              # Export all sessions
 #   ./export-sessions.sh --source telegram            # Filter by platform
-#   ./export-sessions.sh --since 2026-01-01           # Filter by date
+#   ./export-sessions.sh --since 2026-01-01           # Filter start date
+#   ./export-sessions.sh --until 2026-01-31           # Filter end date
 #   ./export-sessions.sh --session-id 20260426_abc123 # Single session
 #   ./export-sessions.sh --output ~/my-sessions.jsonl # Custom output path
 #   ./export-sessions.sh --redact                     # Auto-redact credentials
@@ -27,28 +28,75 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 section() { echo -e "\n${CYAN}${BOLD}── $1 ──${NC}"; }
 
+expand_home_path() {
+    local path="$1"
+    if [[ "$path" == "~" ]]; then
+        printf '%s\n' "$HOME"
+    elif [[ "$path" == "~/"* ]]; then
+        printf '%s\n' "$HOME/${path#"~/"}"
+    else
+        printf '%s\n' "$path"
+    fi
+}
+
+usage() {
+    cat <<EOF
+Usage: $0 [--source cli|telegram|discord|slack|all] [--since YYYY-MM-DD] [--until YYYY-MM-DD]
+          [--session-id ID] [--profile NAME] [--output PATH] [--redact]
+EOF
+}
+
 # --- Defaults ---
 SOURCE_FILTER=""
 SINCE_DATE=""
+UNTIL_DATE=""
 SESSION_ID=""
 OUTPUT_PATH="$HOME/hermes-sessions-$(date +%F).jsonl"
+PROFILE_NAME=""
 REDACT=false
 
 # --- Parse arguments ---
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --source)     SOURCE_FILTER="$2"; shift 2 ;;
-        --since)      SINCE_DATE="$2";    shift 2 ;;
-        --session-id) SESSION_ID="$2";    shift 2 ;;
-        --output)     OUTPUT_PATH="$2";   shift 2 ;;
+        --source)
+            [[ $# -ge 2 ]] || error "Missing value for --source"
+            SOURCE_FILTER="$2"
+            shift 2
+            ;;
+        --since)
+            [[ $# -ge 2 ]] || error "Missing value for --since"
+            SINCE_DATE="$2"
+            shift 2
+            ;;
+        --until)
+            [[ $# -ge 2 ]] || error "Missing value for --until"
+            UNTIL_DATE="$2"
+            shift 2
+            ;;
+        --session-id)
+            [[ $# -ge 2 ]] || error "Missing value for --session-id"
+            SESSION_ID="$2"
+            shift 2
+            ;;
+        --profile)
+            [[ $# -ge 2 ]] || error "Missing value for --profile"
+            PROFILE_NAME="$2"
+            shift 2
+            ;;
+        --output|-o)
+            [[ $# -ge 2 ]] || error "Missing value for $1"
+            OUTPUT_PATH="$2"
+            shift 2
+            ;;
         --redact)     REDACT=true;        shift ;;
         -h|--help)
-            echo "Usage: $0 [--source cli|telegram|discord|slack|all] [--since YYYY-MM-DD]"
-            echo "          [--session-id ID] [--output PATH] [--redact]"
+            usage
             exit 0 ;;
         *) error "Unknown argument: $1" ;;
     esac
 done
+
+OUTPUT_PATH="$(expand_home_path "$OUTPUT_PATH")"
 
 echo -e "${GREEN}${BOLD}"
 echo "=============================================="
@@ -58,7 +106,9 @@ echo -e "${NC}"
 info "Output  : $OUTPUT_PATH"
 [[ -n "$SOURCE_FILTER" ]] && info "Source  : $SOURCE_FILTER"
 [[ -n "$SINCE_DATE"    ]] && info "Since   : $SINCE_DATE"
+[[ -n "$UNTIL_DATE"    ]] && info "Until   : $UNTIL_DATE"
 [[ -n "$SESSION_ID"    ]] && info "Session : $SESSION_ID"
+[[ -n "$PROFILE_NAME"  ]] && info "Profile : $PROFILE_NAME"
 [[ "$REDACT" == true   ]] && info "Redact  : enabled"
 echo ""
 
@@ -76,10 +126,13 @@ section "Exporting"
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 if [[ "$HERMES_AVAILABLE" == true ]]; then
-    CMD_ARGS=("sessions" "export" "$OUTPUT_PATH")
+    CMD_ARGS=()
+    [[ -n "$PROFILE_NAME" ]] && CMD_ARGS+=("--profile" "$PROFILE_NAME")
+    CMD_ARGS+=("sessions" "export" "$OUTPUT_PATH")
 
     [[ -n "$SOURCE_FILTER" && "$SOURCE_FILTER" != "all" ]] && CMD_ARGS+=("--source" "$SOURCE_FILTER")
     [[ -n "$SINCE_DATE"    ]] && CMD_ARGS+=("--since" "$SINCE_DATE")
+    [[ -n "$UNTIL_DATE"    ]] && CMD_ARGS+=("--until" "$UNTIL_DATE")
     [[ -n "$SESSION_ID"    ]] && CMD_ARGS+=("--session-id" "$SESSION_ID")
 
     info "Running: hermes ${CMD_ARGS[*]}"
@@ -87,7 +140,11 @@ if [[ "$HERMES_AVAILABLE" == true ]]; then
 
 else
     # --- Fallback: raw SQLite export ---
-    HERMES_DB="$HOME/.hermes/state.db"
+    if [[ -n "$PROFILE_NAME" ]]; then
+        HERMES_DB="$HOME/.hermes/profiles/$PROFILE_NAME/state.db"
+    else
+        HERMES_DB="$HOME/.hermes/state.db"
+    fi
     [[ -f "$HERMES_DB" ]] || error "state.db not found at $HERMES_DB"
 
     warn "Fallback: exporting directly from SQLite (basic format)."
@@ -99,6 +156,7 @@ db_path = "$HERMES_DB"
 output_path = "$OUTPUT_PATH"
 source_filter = "$SOURCE_FILTER"
 since_date = "$SINCE_DATE"
+until_date = "$UNTIL_DATE"
 session_id = "$SESSION_ID"
 
 con = sqlite3.connect(db_path)
@@ -114,6 +172,9 @@ if source_filter and source_filter != "all":
 if since_date:
     query += " AND created_at >= ?"
     params.append(since_date)
+if until_date:
+    query += " AND created_at <= ?"
+    params.append(until_date + "T23:59:59")
 if session_id:
     query += " AND session_id = ?"
     params.append(session_id)
@@ -143,21 +204,23 @@ if [[ "$REDACT" == true && -f "$OUTPUT_PATH" ]]; then
     section "Credential Redaction"
     warn "Redacting common credential patterns..."
 
-    REDACT_TMP="${OUTPUT_PATH}.redacting"
-    cp "$OUTPUT_PATH" "$REDACT_TMP"
+    REDACT_SRC="$(mktemp)"
+    REDACT_OUT="$(mktemp)"
+    cp "$OUTPUT_PATH" "$REDACT_SRC"
 
     # Redact API keys, tokens, passwords, secrets (value after key=, ": ", etc.)
     sed -E \
-        -e 's/(api[_-]?key["'"'"':\s=]+)[A-Za-z0-9_\-]{16,}/\1[REDACTED]/gi' \
-        -e 's/(token["'"'"':\s=]+)[A-Za-z0-9_\-\.]{16,}/\1[REDACTED]/gi' \
-        -e 's/(password["'"'"':\s=]+)[^\s"'"'"',}{]{6,}/\1[REDACTED]/gi' \
-        -e 's/(secret["'"'"':\s=]+)[A-Za-z0-9_\-\.]{8,}/\1[REDACTED]/gi' \
-        -e 's/(Authorization: Bearer )[^\s"]{8,}/\1[REDACTED]/gi' \
+        -e 's/(api[_-]?key["'"'"':[[:space:]]*=]+)[A-Za-z0-9_\-]{16,}/\1[REDACTED]/gI' \
+        -e 's/(token["'"'"':[[:space:]]*=]+)[A-Za-z0-9_\-\.]{16,}/\1[REDACTED]/gI' \
+        -e 's/(password["'"'"':[[:space:]]*=]+)[^[:space:]"'"'"',}{]{6,}/\1[REDACTED]/gI' \
+        -e 's/(secret["'"'"':[[:space:]]*=]+)[A-Za-z0-9_\-\.]{8,}/\1[REDACTED]/gI' \
+        -e 's/(Authorization: Bearer )[^[:space:]"]{8,}/\1[REDACTED]/gI' \
         -e 's/sk-[A-Za-z0-9]{20,}/sk-[REDACTED]/g' \
         -e 's/AIza[A-Za-z0-9_\-]{35}/[GOOGLE_KEY_REDACTED]/g' \
-        "$REDACT_TMP" > "$OUTPUT_PATH"
+        "$REDACT_SRC" > "$REDACT_OUT"
 
-    rm -f "$REDACT_TMP"
+    mv "$REDACT_OUT" "$OUTPUT_PATH"
+    rm -f "$REDACT_SRC"
     success "Redaction complete"
 fi
 

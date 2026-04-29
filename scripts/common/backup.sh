@@ -4,11 +4,12 @@
 # Safe to run while Hermes is active (uses SQLite WAL-safe backup for state.db).
 #
 # Usage:
-#   ./backup.sh                        # Full backup, output to ~/Desktop
-#   ./backup.sh --quick                # Config + memories + state.db + cron only
-#   ./backup.sh --secure               # Includes .env and auth.json (with warning)
-#   ./backup.sh --output ~/my.zip      # Custom output path
-#   ./backup.sh --profile coder        # Backup a specific profile
+#   ./backup.sh                          # Full backup, output to ~/Desktop
+#   ./backup.sh --quick                  # Config + memories + skills + state.db + cron
+#   ./backup.sh --secure                 # Includes .env and auth.json (with warning)
+#   ./backup.sh --label pre-upgrade      # Add label to generated backup filename
+#   ./backup.sh --output ~/my-backup.zip # Custom output path
+#   ./backup.sh --profile coder          # Backup a specific profile
 
 set -euo pipefail
 
@@ -27,11 +28,34 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 section() { echo -e "\n${CYAN}${BOLD}── $1 ──${NC}"; }
 
+expand_home_path() {
+    local path="$1"
+    if [[ "$path" == "~" ]]; then
+        printf '%s\n' "$HOME"
+    elif [[ "$path" == "~/"* ]]; then
+        printf '%s\n' "$HOME/${path#"~/"}"
+    else
+        printf '%s\n' "$path"
+    fi
+}
+
+usage() {
+    cat <<EOF
+Usage: $0 [--quick|--full|--secure] [--output|-o <path>] [--profile <name>] [--label <text>]
+
+Modes:
+  --full     Include config, memories, skills, sessions, cron, logs, profiles, and state.db
+  --quick    Include config, memories, skills, cron, and state.db
+  --secure   Same as full, plus .env and auth.json (credentials)
+EOF
+}
+
 # --- Defaults ---
 HERMES_DIR="$HOME/.hermes"
 BACKUP_MODE="full"           # full | quick | secure
 OUTPUT_PATH=""
 PROFILE_NAME=""
+LABEL_SUFFIX=""
 DATE_STR="$(date +%F)"
 
 # --- Parse arguments ---
@@ -40,11 +64,25 @@ while [[ $# -gt 0 ]]; do
         --quick)   BACKUP_MODE="quick";  shift ;;
         --full)    BACKUP_MODE="full";   shift ;;
         --secure)  BACKUP_MODE="secure"; shift ;;
-        --output)  OUTPUT_PATH="$2";     shift 2 ;;
-        --profile) PROFILE_NAME="$2";   shift 2 ;;
+        --output|-o)
+            [[ $# -ge 2 ]] || error "Missing value for $1"
+            OUTPUT_PATH="$2"
+            shift 2
+            ;;
+        --profile)
+            [[ $# -ge 2 ]] || error "Missing value for --profile"
+            PROFILE_NAME="$2"
+            shift 2
+            ;;
+        --label)
+            [[ $# -ge 2 ]] || error "Missing value for --label"
+            LABEL_SUFFIX="$2"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: $0 [--quick|--full|--secure] [--output <path>] [--profile <name>]"
-            exit 0 ;;
+            usage
+            exit 0
+            ;;
         *) error "Unknown argument: $1" ;;
     esac
 done
@@ -59,11 +97,17 @@ else
     LABEL="hermes-backup-${DATE_STR}"
 fi
 
-# --- Resolve output path ---
-if [[ -z "$OUTPUT_PATH" ]]; then
-    OUTPUT_PATH="$HOME/Desktop/${LABEL}.tar.gz"
+if [[ -n "$LABEL_SUFFIX" ]]; then
+    SAFE_LABEL_SUFFIX="$(printf '%s' "$LABEL_SUFFIX" | tr -cs 'A-Za-z0-9._-' '-')"
+    LABEL="${LABEL}-${SAFE_LABEL_SUFFIX}"
 fi
 
+# --- Resolve output path ---
+if [[ -z "$OUTPUT_PATH" ]]; then
+    OUTPUT_PATH="$HOME/Desktop/${LABEL}.zip"
+fi
+
+OUTPUT_PATH="$(expand_home_path "$OUTPUT_PATH")"
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
@@ -81,18 +125,16 @@ echo ""
 section "Backup Contents"
 
 declare -a INCLUDE_ITEMS=()
-declare -a EXCLUDE_ITEMS=()
 
 case "$BACKUP_MODE" in
     quick)
         INCLUDE_ITEMS=(
             "config.yaml"
             "memories/"
-            "cron/"
             "skills/"
+            "cron/"
         )
-        EXCLUDE_ITEMS=(".env" "auth.json" "state.db" "sessions/" "logs/")
-        echo "  Mode: QUICK — config, memories, cron, skills"
+        echo "  Mode: QUICK — config, memories, skills, cron, state.db"
         ;;
     full)
         INCLUDE_ITEMS=(
@@ -104,7 +146,6 @@ case "$BACKUP_MODE" in
             "logs/"
             "profiles/"
         )
-        EXCLUDE_ITEMS=(".env" "auth.json")
         echo "  Mode: FULL — everything except .env and auth.json"
         ;;
     secure)
@@ -124,7 +165,6 @@ case "$BACKUP_MODE" in
             "logs/"
             "profiles/"
         )
-        EXCLUDE_ITEMS=()
         echo "  Mode: SECURE — everything including credentials"
         ;;
 esac
@@ -180,12 +220,15 @@ fi
 
 for item in "${INCLUDE_ITEMS[@]}"; do
     src_path="$SOURCE_DIR/$item"
+    if [[ "$item" == "state.db" ]]; then
+        continue
+    fi
     if [[ -e "$src_path" ]]; then
         dest_path="$STAGE_DIR/$item"
         mkdir -p "$(dirname "$dest_path")"
         if [[ -d "$src_path" ]]; then
-            cp -r "$src_path" "$dest_path"
-        elif [[ "$item" != "state.db" ]]; then  # already handled above
+            cp -R "$src_path" "$dest_path"
+        else
             cp "$src_path" "$dest_path"
         fi
     fi
@@ -199,14 +242,14 @@ mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 if [[ "$OUTPUT_PATH" == *.zip ]]; then
     if command -v zip &>/dev/null; then
-        (cd "$WORK_DIR" && zip -rq "$(realpath "$OUTPUT_PATH")" hermes-backup/)
+        (cd "$WORK_DIR" && zip -rq "$OUTPUT_PATH" hermes-backup/)
     else
         warn "zip not found — using tar.gz instead"
         OUTPUT_PATH="${OUTPUT_PATH%.zip}.tar.gz"
-        (cd "$WORK_DIR" && tar -czf "$(realpath "$OUTPUT_PATH")" hermes-backup/)
+        (cd "$WORK_DIR" && tar -czf "$OUTPUT_PATH" hermes-backup/)
     fi
 else
-    (cd "$WORK_DIR" && tar -czf "$(realpath "$OUTPUT_PATH")" hermes-backup/)
+    (cd "$WORK_DIR" && tar -czf "$OUTPUT_PATH" hermes-backup/)
 fi
 
 # --- Report ---
