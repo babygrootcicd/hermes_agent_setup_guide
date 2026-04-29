@@ -196,15 +196,39 @@ hermes model
 
 #### English
 
+Use separate launch commands per mode (model/toolsets are fixed at session start).
+
+1. `fast-local` with `terminal,skills`:
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` with `web,terminal,skills`:
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. Baseline `qwen32b-64k` with `terminal,skills`:
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 1
 ```
 
-After this succeeds, scale up gradually:
+Switching between modes:
+
+1. Exit current session with `/quit`.
+2. Start the other command.
+
+Set `fast-local` as default profile (optional):
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+hermes profile use fast-local
 ```
+
+Then you can use:
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+Or change toolsets per launch.
 
 Then test session persistence:
 
@@ -215,15 +239,39 @@ hermes sessions list
 
 #### 繁體中文
 
+每個模式請分開啟動（模型與 toolsets 在 session 開始時就固定）。
+
+1. `fast-local` 搭配 `terminal,skills`：
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` 搭配 `web,terminal,skills`：
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. 基準模式 `qwen32b-64k` 搭配 `terminal,skills`：
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 1
 ```
 
-成功後可逐步放寬為：
+模式切換方式：
+
+1. 先在目前 session 輸入 `/quit`。
+2. 再啟動另一條指令。
+
+可選：把 `fast-local` 設為預設 profile：
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+hermes profile use fast-local
 ```
+
+之後可直接使用：
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+也可以每次啟動時切換不同 toolsets。
 
 接著測試 session 延續：
 

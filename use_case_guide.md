@@ -29,13 +29,47 @@ hermes model
 ./scripts/common/gather_context.sh README.md docs examples/skills > /tmp/hermes_context.txt
 ```
 
-4. Start a focused session.
+4. Start a focused session (pick one mode).
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+fast-local chat --toolsets terminal,skills --max-turns 12
 ```
 
 5. Paste your task prompt + key context paths.
+
+Mode switching reference:
+
+1. `fast-local` with `terminal,skills`:
+```bash
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` with `web,terminal,skills`:
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. Baseline `qwen32b-64k` with `terminal,skills`:
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 1
+```
+
+Switching between modes:
+
+1. Exit current session with `/quit`.
+2. Start the other command.
+
+Set `fast-local` as default profile (optional):
+
+```bash
+hermes profile use fast-local
+```
+
+Then you can use:
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+Or change toolsets per launch.
 
 Minimal prompt skeleton:
 
@@ -69,10 +103,10 @@ hermes model
 ./scripts/common/gather_context.sh README.md docs examples/skills > /tmp/hermes_context.txt
 ```
 
-4. 開啟一個聚焦的對話 session。
+4. 開啟一個聚焦的對話 session（先選一個模式）。
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+fast-local chat --toolsets terminal,skills --max-turns 12
 ```
 
 5. 貼上你的任務描述與關鍵檔案路徑。

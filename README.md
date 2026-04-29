@@ -40,18 +40,41 @@ hermes claw cleanup
    - Recommended: `qwen32b-64k:latest`
    - Avoid for agentic tool workflows: `hermes3`
 
-### Safer default launch (responsive first run)
+### Launch Modes + Switching
 
+Use separate launch commands per mode (model/toolsets are fixed at session start).
+
+1. `fast-local` with `terminal,skills`:
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` with `web,terminal,skills`:
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. Baseline `qwen32b-64k` with `terminal,skills`:
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 1
 ```
 
-Why this is faster:
-- Limits orchestration overhead (`--max-turns 8`) for first validation.
-- Restricts tool discovery to only what is needed (`terminal,skills`).
-- Avoids broad toolset loading that often causes "it responds, but very slow".
+Switching between modes:
 
-If this is stable, then scale up to your normal turn count and additional toolsets.
+1. Exit current session with `/quit`.
+2. Start the other command.
+
+Set `fast-local` as default profile (optional):
+
+```bash
+hermes profile use fast-local
+```
+
+Then you can use:
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+Or change toolsets per launch.
 
 ### Troubleshooting decision flow
 
