@@ -1,3 +1,6 @@
+
+<img width="1476" height="834" alt="Screenshot 2026-04-29 at 10 29 31 PM" src="https://github.com/user-attachments/assets/30839f75-981a-4d88-9478-9b339dd0cad2" />
+
 # Hermes Agent + Ollama Setup Guide
 
 A local-first setup and orientation repository for running **Hermes Agent** with local Ollama, cloud providers, gateway automation, an Electron desktop app, and Docker-based isolation.
