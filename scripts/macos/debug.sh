@@ -26,7 +26,15 @@ EOF
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --desktop) OPEN_DESKTOP=true; shift ;;
-        --log) LOG_OVERRIDE="$2"; shift 2 ;;
+        --log)
+            if [[ $# -lt 2 || -z "${2:-}" ]]; then
+                echo "[WARN] Missing value for --log"
+                usage
+                exit 1
+            fi
+            LOG_OVERRIDE="$2"
+            shift 2
+            ;;
         -h|--help) usage; exit 0 ;;
         *) echo "[WARN] Unknown argument: $1"; usage; exit 1 ;;
     esac

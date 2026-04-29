@@ -88,6 +88,8 @@ See [Docker Deployment Guide](docs/dev_progress/80-docker-deployment.md).
 
 ## Phase Artifacts
 
+Implementation phases are complete (11/11) and tracked in [docs/charactistics/progress.md](docs/charactistics/progress.md).
+
 Development phase docs and markers are split between:
 
 - [docs/dev_progress](docs/dev_progress): authored setup and operational documentation.
