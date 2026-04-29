@@ -61,6 +61,36 @@ Omit items with no actionable next step. Each item: one sentence description + o
 
 ---
 
-OUTPUT FORMAT:
-Markdown. Use headers for each step. Keep each section concise — bullet points preferred over prose.
-End with a one-line overall status: "✅ Clean" / "⚠️ Issues Found" / "🚨 Critical Action Required".
+OUTPUT CONTRACT (REQUIRED):
+Return Markdown only with these exact top-level headers in order:
+1. `# Nightly DevSecOps Digest`
+2. `## Step 1 — Open Pull Requests`
+3. `## Step 2 — Recent Commits (Last 24 Hours)`
+4. `## Step 3 — Dependency Vulnerability Check`
+5. `## Step 4 — CI Failure Analysis`
+6. `## Step 5 — Action Items`
+7. `## Overall Status`
+
+Section contracts:
+- Step 1: Markdown table with exact columns:
+  `PR | Author | CI Status | Days Open | Last Activity | Assignee/Reviewer | Stale`
+- Step 2: Bullet list for flagged commits only.
+  Format: `- <short_sha> | <risk_area> | <impact_summary>`
+  If none: `- None`.
+- Step 3: Markdown table with exact columns:
+  `Package | Version | CVE | Severity | Description | Upgrade Path`
+  Include only `critical` and `high`. If none: single line `No critical/high CVEs found.`
+- Step 4: Bullet list with exactly:
+  `- Branch:`
+  `- Failing check:`
+  `- Error:`
+  `- Recurrence: New|Recurring`
+  `- Suggested first steps:`
+  Repeat per failing branch. If no failures: `- No CI failures detected.`
+- Step 5: Numbered list grouped by priority labels `🔴`, `🟡`, `🟢`.
+  Each item format:
+  `<priority> <description> | Owner: <name> | Next action: <action>`
+- Overall Status: exactly one line, one of:
+  - `✅ Clean`
+  - `⚠️ Issues Found`
+  - `🚨 Critical Action Required`

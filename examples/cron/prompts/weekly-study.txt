@@ -70,8 +70,36 @@ For each 🔴 Weak domain from Section 1, list:
 
 ---
 
-OUTPUT FORMAT:
-Plain Markdown. Use ## headers for each section. Tables where specified.
-No first-person or second-person pronouns throughout.
-No filler sentences. Every line must contain actionable or factual content.
-End with a one-line progress summary: "Week N of M — [X]% of domains at ≥80% — [days] days to exam target"
+OUTPUT CONTRACT (REQUIRED):
+Return Markdown only with this exact section order:
+1. `# Weekly Certification Study Review`
+2. `## Section 1 — Domain Coverage Table`
+3. `## Section 2 — Repeated Misconceptions`
+4. `## Section 3 — Exam Trap Patterns`
+5. `## Section 4 — Next Week's Drill List`
+6. `## Section 5 — Resources for Weak Areas`
+7. `## Progress Summary`
+
+Formatting contracts:
+- Section 1 table columns (exact):
+  `Domain | Questions Attempted | Correct | Accuracy % | Time Spent (est.) | Status`
+- Section 2 table columns (exact):
+  `Concept | Domain | Misconception | Correct Answer | Reference`
+  If none: single row `No repeated misconceptions this week`.
+- Section 3 table columns (exact):
+  `Pattern Name | Example Question Type | How to Avoid It`
+- Section 4:
+  - Numbered list, 3-5 items only.
+  - Each line format:
+    `<topic> | Resource: <resource> | Target: <measurable target>`
+- Section 5:
+  - One bullet block per `🔴 Weak` domain from Section 1.
+  - If no weak domains: single line `No weak domains this week.`
+
+Language/style constraints:
+- No first-person or second-person pronouns.
+- No filler text.
+- Every claim must map to session history, notes, or stated assumption.
+
+Final line contract:
+- `Week <N> of <M> — <X>% of domains at ≥80% — <D> days to exam target`

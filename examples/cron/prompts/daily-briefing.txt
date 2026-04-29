@@ -46,3 +46,29 @@ OUTPUT FORMAT:
 - End with a one-line "Today's Signal" summary of the single most important finding across all topics
 
 Do not include: funding rounds, acquisitions, or business news unless they directly release open-source code or a public technical artifact.
+
+---
+
+OUTPUT CONTRACT (REQUIRED):
+1) Return Markdown only.
+2) Use this exact heading structure and order:
+   - `# Daily Morning Briefing`
+   - `## Topic 1 — AI Agent Frameworks`
+   - `## Topic 2 — Open-Source LLM Releases`
+   - `## Topic 3 — Cloud Security & Zero Trust`
+   - `## Topic 4 — [YOUR_EXTRA_TOPIC]`
+   - `## Today's Signal`
+3) Under each topic heading:
+   - Provide `0-3` items.
+   - If no valid items exist, output exactly one bullet: `- 無新消息`.
+   - For each item, use exactly this 4-line block:
+     - `- Title: <title>`
+     - `  Date: <YYYY-MM-DD>`
+     - `  Summary: <Traditional Chinese, max 2 sentences>`
+     - `  Source: <https://...>`
+4) Under `## Today's Signal`, output exactly one line:
+   - `- <most important finding in Traditional Chinese> | Source: <https://...>`
+5) Hard limits:
+   - No topic may exceed 3 items.
+   - Every non-empty item must include a valid `Source` URL.
+   - No prose outside the required sections.

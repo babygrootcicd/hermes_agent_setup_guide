@@ -1,67 +1,58 @@
-# Task: Add "Copy to Clipboard" Feature to Code Blocks
+# Task: <Feature Title>
 
-## 🎯 Goal
-Enhance the documentation site by adding a "Copy" button to all code blocks, allowing users to easily copy code snippets with a single click.
+## Goal
+Implement `<feature>` in `<scope>` with minimal blast radius and verifiable behavior changes.
 
-## 📝 Sub-tasks
-- [x] Task 1: Research existing code block rendering logic.
-- [ ] Task 2: Create a reusable `CopyButton` component.
-- [ ] Task 3: Integrate `CopyButton` into the Markdown renderer.
-- [ ] Task 4: Add CSS styles for the button (hover states, positioning).
-- [ ] Task 5: Add a "Copied!" tooltip/feedback mechanism.
+## Ownership & Constraints
+- Editable paths: `<list allowed paths>`
+- Non-editable paths: `<list restricted paths>`
+- Runtime constraints: `<sandbox/network/tool limits>`
+- Style constraints: `<language/framework conventions>`
 
-## 📂 Context
-*Generated using `./scripts/common/gather_context.sh app/renderer.js app/styles.css`*
+## Sub-Tasks
+- [ ] Read relevant code paths and existing patterns
+- [ ] Implement behavior changes
+- [ ] Add/adjust tests for changed behavior
+- [ ] Run verification commands
+- [ ] Produce final implementation report
 
-================================================================================
-FILE: app/renderer.js
-================================================================================
-import { Marked } from 'marked';
-import hljs from 'highlight.js';
+## Context
+Generated with:
 
-const renderer = {
-  code(code, infostring, escaped) {
-    const lang = (infostring || '').match(/\S*/)[0];
-    const highlighted = lang ? hljs.highlight(code, { language: lang }).value : code;
-    
-    return `
-      <pre class="hljs">
-        <code class="language-${lang}">${highlighted}</code>
-      </pre>
-    `;
-  }
-};
+```bash
+./scripts/common/gather_context.sh <path1> <path2> ...
+```
 
-export const renderMarkdown = (content) => {
-  const marked = new Marked({ renderer });
-  return marked.parse(content);
-};
+Paste output below this line:
 
+---
 
-================================================================================
-FILE: app/styles.css
-================================================================================
-.hljs {
-  position: relative;
-  padding: 1em;
-  background: #282c34;
-  border-radius: 6px;
-  overflow: auto;
-}
+## Output Contract (Required)
+Final response must include all sections below in order.
 
-code {
-  font-family: 'Fira Code', monospace;
-}
+1. `Status`
+   - One of: `complete` | `partial` | `blocked`
+   - Include one-sentence rationale.
 
+2. `Changed Files`
+   - Bullet list of touched files only.
+   - Per file include a one-line summary of what changed.
 
-## 💡 Implementation Strategy
-1.  Modify `renderer.code` in `app/renderer.js` to wrap the `<pre>` in a container.
-2.  Inject a `<button class="copy-btn">Copy</button>` into that container.
-3.  Add a global click listener or inline `onclick` that uses `navigator.clipboard.writeText`.
-4.  Update `app/styles.css` to position the button in the top-right corner of the code block.
+3. `Implementation Details`
+   - Brief explanation of the functional change.
+   - Note any assumptions made.
 
-## 🧪 Verification Plan
-1.  **Manual Test**: Open a page with a code block.
-2.  **Functionality**: Click the "Copy" button and verify the content is in the clipboard.
-3.  **Visual**: Ensure the button is visible on hover and doesn't obscure the code.
-4.  **Feedback**: Verify the "Copied!" text appears briefly after clicking.
+4. `Verification Done`
+   - List exact commands run.
+   - For each command include `pass` or `fail`.
+   - If not run, state why.
+
+5. `Risks`
+   - List remaining risks, edge cases, or follow-ups.
+   - Use `none` if no known risks remain.
+
+## Acceptance Criteria
+- Behavior matches the requested feature scope.
+- Output Contract is fully satisfied.
+- Verification commands are included with outcomes.
+- No edits outside declared ownership.

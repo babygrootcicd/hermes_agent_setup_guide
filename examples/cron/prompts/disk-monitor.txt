@@ -68,12 +68,43 @@ Check Loki chunk retention:
 
 ---
 
-OUTPUT FORMAT:
-If all healthy: single line "✅ All disks healthy — [timestamp]"
-If issues found:
-  🚨 DISK ALERT — [timestamp]
-  Path: [path] — [usage]% used ([available] free)
-  Largest items: [list]
-  Cleanup plan: [numbered steps with exact commands]
-  Estimated reclaim: [size]
-  Retention status: [OK / WARNING]
+OUTPUT CONTRACT (REQUIRED):
+Mode A — Healthy state:
+- Return exactly one line:
+  `✅ All disks healthy — <timestamp ISO-8601 UTC>`
+- No extra lines, tables, or commentary.
+
+Mode B — Alert state (if any path >= threshold OR retention anomaly):
+- Return Markdown with this exact section order:
+  1. `# 🚨 DISK ALERT`
+  2. `## Summary`
+  3. `## Disk Usage`
+  4. `## Top Consumers`
+  5. `## Cleanup Plan`
+  6. `## Retention Status`
+  7. `## Execution Timestamp`
+
+- `## Summary`:
+  - Bullet list with impacted paths only.
+  - Format per bullet: `- <path> | <usage>% used | <available> free | Status: WARNING|CRITICAL`
+
+- `## Disk Usage`:
+  - Markdown table with exact columns:
+    `Path | Total | Used | Available | Usage% | Status`
+
+- `## Top Consumers`:
+  - For each impacted path, list top 5 items from `du -sh <path>/*`.
+  - Format: `### <path>` followed by 5 bullets: `- <size> <item> (<category>)`
+
+- `## Cleanup Plan`:
+  - Numbered list with exact commands in backticks.
+  - Each step must include `Risk:` and `Estimated reclaim:`.
+
+- `## Retention Status`:
+  - Exactly two lines:
+    - `Prometheus: OK|WARNING — <reason>`
+    - `Loki: OK|WARNING — <reason>`
+
+- `## Execution Timestamp`:
+  - Exactly one line:
+    - `<timestamp ISO-8601 UTC>`
