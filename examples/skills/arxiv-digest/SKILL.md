@@ -1,0 +1,257 @@
+# Skill: arXiv Paper Digest
+
+## Metadata
+- **Version:** 1.0.0
+- **Compatible with:** Hermes Agent 0.x+
+- **Standard:** agentskills.io/v1
+
+## Triggers
+Invoke this skill when the user says any of:
+- "paper digest"
+- "arxiv digest"
+- "arxiv update"
+- "research update"
+- "what's new on arxiv"
+- "summarize today's papers"
+- "research papers today"
+
+---
+
+## Tools Required
+| Tool | Purpose |
+|------|---------|
+| `web` | Search arXiv RSS feeds, fetch paper abstracts, search by category and date |
+| `memory` | Read topic preferences and output path from MEMORY.md |
+| `file` | Write digest to local Markdown note |
+| `messaging` | Optionally deliver digest to configured platform |
+
+---
+
+## Customization Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ARXIV_CATEGORIES` | `cs.AI,cs.CR,cs.LG,cs.SE` | arXiv category codes (comma-separated) |
+| `ARXIV_MAX_PAPERS` | `5` | Maximum papers to include per run |
+| `ARXIV_DATE_WINDOW` | `24h` | Time window: `24h`, `48h`, `7d` |
+| `ARXIV_RELEVANCE_KEYWORDS` | See MEMORY.md | Keywords that boost relevance score |
+| `ARXIV_OUTPUT_PATH` | `~/research/` | Local directory to save digest files |
+| `ARXIV_OUTPUT_FILENAME` | `arxiv-{date}.md` | Output filename pattern |
+| `ARXIV_DELIVERY` | `file` | Delivery: `file`, `telegram`, `discord`, `slack` |
+| `ARXIV_LANGUAGE` | `en` | Output language for summaries |
+| `ARXIV_INCLUDE_LINKS` | `true` | Include arXiv abstract and PDF links |
+
+---
+
+## Category Code Reference
+
+| Code | Full Name | Relevance |
+|------|-----------|-----------|
+| `cs.AI` | Artificial Intelligence | AI agents, reasoning, planning, tool use |
+| `cs.CR` | Cryptography and Security | Security research, cryptography, threat analysis |
+| `cs.LG` | Machine Learning | LLM training, alignment, RLHF, evaluation |
+| `cs.SE` | Software Engineering | Dev tools, testing, program analysis |
+| `cs.CL` | Computation and Language | NLP, language models, instruction tuning |
+| `cs.CV` | Computer Vision | Vision models, multimodal |
+| `cs.DC` | Distributed Computing | Cloud systems, consensus, distributed ML |
+| `cs.NE` | Neural and Evolutionary | Neural architecture, evolutionary optimization |
+| `stat.ML` | Statistics — Machine Learning | Statistical learning theory |
+| `eess.SP` | Signal Processing | Audio/speech models |
+
+---
+
+## Step-by-Step Procedure
+
+### Step 1: Load preferences
+```
+Read MEMORY.md for:
+- Preferred categories (ARXIV_CATEGORIES)
+- Relevance boost keywords
+- Output path (ARXIV_OUTPUT_PATH)
+- Delivery target
+- Any topic exclusions
+```
+
+### Step 2: Fetch papers per category
+
+For each category in ARXIV_CATEGORIES, query the arXiv API:
+```
+URL: https://export.arxiv.org/api/query
+Params:
+  search_query=cat:{category}
+  start=0
+  max_results=30
+  sortBy=submittedDate
+  sortOrder=descending
+```
+
+Filter by date: keep only papers submitted within ARXIV_DATE_WINDOW.
+
+Alternatively, use arXiv RSS feed:
+```
+URL: https://rss.arxiv.org/{category}
+Parse: title, abstract, link, authors, submitted date
+```
+
+### Step 3: Score relevance
+
+For each paper, compute a relevance score:
+
+| Signal | Score |
+|--------|-------|
+| Title contains a ARXIV_RELEVANCE_KEYWORDS match | +3 each |
+| Abstract contains a keyword match | +1 each |
+| Submitted in last 12 hours | +2 |
+| Submitted in last 24 hours | +1 |
+| Authors from known research labs (Anthropic, DeepMind, OpenAI, Nous Research, Stanford, CMU, MIT) | +1 |
+| Paper has GitHub repo linked in abstract | +2 |
+| Paper is a survey / benchmark paper | +1 |
+| Paper is primarily about training data or infrastructure (less actionable) | -1 |
+
+Select top `ARXIV_MAX_PAPERS` papers by score across all categories (not per-category).
+
+### Step 4: Fetch and parse abstracts
+
+For each selected paper:
+```
+Fetch abstract page: https://arxiv.org/abs/{paper_id}
+Extract:
+  - Full title
+  - Authors (first 3; "et al." if more)
+  - Abstract text (first 3 sentences for summary)
+  - Submission date
+  - arXiv ID
+  - PDF link: https://arxiv.org/pdf/{paper_id}
+  - GitHub link (if mentioned in abstract)
+```
+
+### Step 5: Summarize each paper
+
+For each paper, produce a structured summary:
+
+```
+**Title:** {full title}
+**Authors:** {author1, author2, author3 et al.}
+**Category:** {category code}
+**Submitted:** {date}
+
+**Key Contribution:** {1 sentence — what is the core novelty or claim?}
+**Why It Matters:** {1 sentence — what problem does this solve or improve?}
+**Method:** {1 sentence — how do they do it?}
+
+[Abstract](https://arxiv.org/abs/{id}) | [PDF](https://arxiv.org/pdf/{id}) {| [GitHub]({url}) if available}
+```
+
+### Step 6: Assemble digest
+
+**Full digest format:**
+
+```markdown
+# arXiv Digest — {date}
+
+**Categories:** {ARXIV_CATEGORIES}
+**Papers selected:** {N} from {M} candidates
+
+---
+
+## 1. {Paper Title}
+**Authors:** ...
+**Category:** cs.AI
+
+**Key Contribution:** ...
+**Why It Matters:** ...
+**Method:** ...
+
+[Abstract](url) | [PDF](url) | [GitHub](url)
+
+---
+
+## 2. {Paper Title}
+...
+
+---
+
+*Generated by Hermes Agent arXiv-digest skill · {timestamp}*
+*Relevance keywords: {keywords}*
+```
+
+### Step 7: Save and deliver
+
+Write to `{ARXIV_OUTPUT_PATH}/{ARXIV_OUTPUT_FILENAME}` (e.g., `~/research/arxiv-2026-04-29.md`).
+
+If ARXIV_DELIVERY is a messaging platform, send a condensed version:
+```
+📄 arXiv Digest — {date} ({N} papers)
+
+1. [{title}]({abstract_url}) — {key contribution in 10 words}
+2. ...
+
+Full digest: ~/research/arxiv-{date}.md
+```
+
+---
+
+## Example Cron Commands
+
+**Daily digest at 09:00:**
+```bash
+hermes cron create "0 9 * * *" \
+  --prompt "Run arxiv-digest skill. Categories: cs.AI, cs.CR, cs.LG. Max 5 papers. Save to ~/research/." \
+  --deliver file:~/research/arxiv-$(date +%F).md \
+  --profile study
+```
+
+**With Telegram delivery:**
+```bash
+hermes cron create "0 9 * * *" \
+  --prompt "Run arxiv-digest skill. Categories: cs.AI, cs.CR. Max 3 papers. Deliver condensed version to Telegram. Save full to ~/research/." \
+  --deliver telegram \
+  --profile study
+```
+
+**Security-only weekly digest:**
+```bash
+hermes cron create "0 10 * * 1" \
+  --prompt "Run arxiv-digest skill. Categories: cs.CR only. Date window: 7 days. Max 10 papers. Focus on: LLM security, adversarial attacks, zero-day research." \
+  --deliver file:~/research/security-papers-$(date +%F).md \
+  --profile study
+```
+
+---
+
+## Relevance Keyword Examples (for MEMORY.md)
+
+```markdown
+## arXiv Relevance Keywords
+- agent, agentic, tool use, planning, reasoning
+- LLM, large language model, instruction tuning, RLHF, alignment
+- zero trust, threat detection, vulnerability, adversarial
+- prompt injection, jailbreak, red team
+- open source, benchmark, evaluation
+- RAG, retrieval augmented, knowledge graph
+```
+
+---
+
+## Known Edge Cases
+
+| Situation | Handling |
+|-----------|---------|
+| arXiv API returns 0 results (weekend / holiday) | Note low activity; use 48h window as fallback |
+| Paper has no abstract available | Use title only; mark as `[abstract unavailable]` |
+| Multiple papers from same research group | Keep highest-scoring; note others briefly |
+| Paper is a revision (v2, v3) of an existing paper | Include if significantly updated; note version |
+| GitHub link in abstract is broken | Omit the link; do not fabricate |
+| Rate limited by arXiv API | Wait 3 seconds between requests; spread over 2 batch queries |
+| Paper appears in multiple categories | Count once; assign to primary category |
+
+---
+
+## Memory Integration
+
+After each run, optionally update MEMORY.md:
+```
+arXiv digest run: {date} — {N} papers, categories: {list}. Top paper: "{title}".
+```
+
+Track if the user consistently reads certain paper types (security benchmarks, agent architecture papers) and adjust relevance weights accordingly.
