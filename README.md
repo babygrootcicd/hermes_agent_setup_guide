@@ -19,6 +19,55 @@ PowerShell (Run as Administrator):
 
 ---
 
+## First-Start Reliability + Speed Defaults
+
+Use this checklist before deciding Hermes is "slow" or "broken":
+
+1. Confirm Hermes is callable:
+```bash
+export PATH="$HOME/.hermes/bin:$PATH"
+hermes --version
+```
+2. Confirm Ollama is reachable:
+```bash
+curl -fsS http://127.0.0.1:11434/api/tags
+```
+3. If you migrated from OpenClaw, clean stale workspace routing:
+```bash
+hermes claw cleanup
+```
+4. Select a tool-use capable model in `hermes model`:
+   - Recommended: `qwen32b-64k:latest`
+   - Avoid for agentic tool workflows: `hermes3`
+
+### Safer default launch (responsive first run)
+
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+```
+
+Why this is faster:
+- Limits orchestration overhead (`--max-turns 8`) for first validation.
+- Restricts tool discovery to only what is needed (`terminal,skills`).
+- Avoids broad toolset loading that often causes "it responds, but very slow".
+
+If this is stable, then scale up to your normal turn count and additional toolsets.
+
+### Troubleshooting decision flow
+
+1. `hermes: command not found`:
+   - Fix PATH to include `~/.hermes/bin`, then reopen shell.
+2. `connection refused` / cannot reach Ollama:
+   - Start Ollama and recheck `http://127.0.0.1:11434/api/tags`.
+3. WSL connects inconsistently:
+   - Use Windows host IP from WSL (`ip route` default gateway), not fixed localhost assumptions.
+4. Hermes starts but tool calls are poor/looping:
+   - Re-run `hermes model` and switch to `qwen32b-64k:latest`.
+5. Startup is extremely slow:
+   - Start with `terminal,skills` only and low turns, then expand gradually.
+6. Desktop app fails with `posix_spawnp failed`:
+   - Rebuild `node-pty` for current Electron ABI (see Troubleshooting section below).
+
 ## Repository Map
 
 | Path | Purpose |

@@ -17,6 +17,59 @@ This document provides exact, executable steps to initialize, configure, and sta
   - Ollama URL: `http://127.0.0.1:11434/v1`
   - Model: `qwen32b-64k:latest`
   - Context length: `65536`
+- Default first-start launch profile in this guide:
+  - `--toolsets terminal,skills`
+  - `--max-turns 8` (speed-first smoke test)
+
+---
+
+## 0.5) First-Start Decision Flow / 首次啟動決策流程
+
+### English
+
+Run these checks in order before deep troubleshooting:
+
+1. Hermes binary available?
+```bash
+export PATH="$HOME/.hermes/bin:$PATH"
+hermes --version
+```
+2. Ollama API reachable?
+```bash
+curl -fsS http://127.0.0.1:11434/api/tags
+```
+3. Old OpenClaw workspace present and causing config confusion?
+```bash
+hermes claw cleanup
+```
+4. Model appropriate for tool use?
+   - Use `qwen32b-64k:latest` in `hermes model`.
+   - Avoid `hermes3` for agentic tool workflows.
+5. Still slow?
+   - Start with only `terminal,skills` toolsets and low `--max-turns`.
+
+### 繁體中文
+
+在進入深度排錯前，請依序做以下檢查：
+
+1. Hermes 指令可用嗎？
+```bash
+export PATH="$HOME/.hermes/bin:$PATH"
+hermes --version
+```
+2. Ollama API 可連線嗎？
+```bash
+curl -fsS http://127.0.0.1:11434/api/tags
+```
+3. 是否有舊的 OpenClaw 工作目錄造成設定混淆？
+```bash
+hermes claw cleanup
+```
+4. 模型是否適合工具調用？
+   - 在 `hermes model` 使用 `qwen32b-64k:latest`。
+   - 避免 `hermes3` 用於 agent 工具流程。
+5. 還是很慢？
+   - 先用最小 toolsets（`terminal,skills`）與較低 `--max-turns` 啟動。
 
 ---
 
@@ -144,6 +197,12 @@ hermes model
 #### English
 
 ```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+```
+
+After this succeeds, scale up gradually:
+
+```bash
 hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
 ```
 
@@ -155,6 +214,12 @@ hermes sessions list
 ```
 
 #### 繁體中文
+
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+```
+
+成功後可逐步放寬為：
 
 ```bash
 hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
@@ -302,13 +367,13 @@ hermes model
 #### English
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
 ```
 
 #### 繁體中文
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
 ```
 
 ### 3.4 Verify on Windows + WSL
@@ -445,7 +510,42 @@ hermes --version
 - English: Set `HERMES_BASE_URL` to Windows host IP from WSL and allow firewall rule for 11434.
 - 繁中：在 WSL 用 Windows host IP 設定 `HERMES_BASE_URL`，並開放防火牆 11434。
 
-### D. Session not resumable
+### D. OpenClaw migration confusion (`~/.openclaw` still active)
+
+- English: Hermes may read stale OpenClaw memory/config if migration leftovers remain.
+- 繁中：若遷移殘留未清理，Hermes 可能讀到舊 OpenClaw 設定/記憶。
+
+```bash
+hermes claw cleanup
+```
+
+### E. Wrong model for tool use (slow, weak tool orchestration)
+
+- English: Re-run `hermes model` and use `qwen32b-64k:latest`; avoid `hermes3` for tool-heavy sessions.
+- 繁中：重新執行 `hermes model`，改用 `qwen32b-64k:latest`；工具密集任務避免 `hermes3`。
+
+### F. Desktop app startup error (`posix_spawnp failed`)
+
+- English: This usually means `node-pty` was built for wrong Electron ABI.
+- 繁中：通常是 `node-pty` 與目前 Electron ABI 不相容。
+
+```bash
+cd app
+npm install
+npx @electron/rebuild -f -w node-pty
+npm run build
+```
+
+### G. Very slow responses even when startup succeeds
+
+- English: Reduce toolsets and turn budget first. Start with:
+  `hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8`
+- 繁中：先縮小 toolsets 與回合數。建議從：
+  `hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8`
+- English: Only add more toolsets after baseline responsiveness is confirmed.
+- 繁中：確認基礎反應速度後，再逐步增加 toolsets。
+
+### H. Session not resumable
 
 - English: Verify DB/session dirs and run verifier.
 - 繁中：確認資料庫與 sessions 目錄，並執行驗證腳本。
@@ -498,3 +598,15 @@ hermes chat --resume <session_id>
 ```
 
 若 `--continue` 失敗，先列出 session 再指定 `--resume <session_id>`。
+
+If responsiveness is poor, start a fresh fast-profile session:
+
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+```
+
+若反應速度仍慢，改用新的快速 profile 開新 session：
+
+```bash
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+```
