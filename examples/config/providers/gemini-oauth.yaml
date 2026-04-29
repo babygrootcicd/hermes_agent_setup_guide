@@ -1,0 +1,80 @@
+# Hermes Agent — Provider Config: Google Gemini CLI OAuth
+#
+# WARNING: Google may treat use of the Gemini CLI OAuth client in third-party
+# software as a policy violation. This path is convenient for quick testing but
+# is NOT recommended for long-term production use.
+# → For stable free usage, use gemini-api-key.yaml instead.
+#
+# Recommended use: short-term testing only
+#
+# Setup:
+#   Run: hermes model
+#   Select: "Google Gemini OAuth" or "google-gemini-cli"
+#   Complete the OAuth device code flow in your browser.
+#   Credentials are saved to: ~/.hermes/auth.json
+#
+# Token refresh:
+#   Tokens expire periodically. Re-run `hermes model` and re-authenticate
+#   if you see 401/403 errors. auth.json is updated automatically on refresh.
+#
+# Auth file location: ~/.hermes/auth.json  (never commit this file)
+
+agent:
+  name: "HermesGeminiOAuth"
+  description: "Hermes Agent via Google Cloud Code Assist (OAuth)"
+  max_turns: 20
+
+model:
+  provider: google-gemini-cli
+  # Auth is handled via OAuth stored in ~/.hermes/auth.json
+  # No api_key field needed — credentials come from auth.json
+
+  # --- Model options (uncomment one) ---
+  # gemini-2.5-flash  → best latency; recommended for everyday agent tasks
+  # gemini-2.5-pro    → heavier reasoning; slower
+  # gemini-2.0-flash  → fastest first token
+  default: gemini-2.5-flash
+
+  # Personal account free tier via Google Cloud Code Assist backend.
+  # Hermes will auto-provision free tier on first authenticated request.
+  context_length: 32768
+
+terminal:
+  backend: local
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+toolsets:
+  enabled:
+    - terminal
+    - web
+    - skills
+    - memory
+  disabled:
+    - browser_automation
+    - code_execution
+    - home_assistant
+
+gateways:
+  telegram:
+    enabled: false
+    token: "${TELEGRAM_BOT_TOKEN}"
+  discord:
+    enabled: false
+    token: "${DISCORD_BOT_TOKEN}"
+
+storage:
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true

@@ -1,0 +1,89 @@
+# Hermes Agent — Provider Config: GitHub Copilot
+#
+# Best for: users with an existing GitHub Copilot subscription.
+# Uses your Copilot subscription — NO extra billing or separate API key needed.
+# Provides access to GPT-4o, Claude Sonnet, and Gemini models via the Copilot API.
+#
+# Setup:
+#   Run: hermes model
+#   Select: "GitHub Copilot"
+#   Complete the OAuth device code login (opens browser for GitHub auth).
+#   Credentials are saved to: ~/.hermes/auth.json
+#
+# Check remaining quota:
+#   GitHub Settings → Copilot → Usage → view monthly request count
+#   Enterprise: GitHub Admin → Copilot → Seat Management
+#
+# Subscription tiers and model availability:
+#   Individual  → GPT-4o, GPT-4o-mini, Claude Sonnet (limited), Gemini Flash
+#   Business    → Same as Individual + higher rate limits, audit logs
+#   Enterprise  → Full model catalog, org-level policy controls
+#
+# Auth file location: ~/.hermes/auth.json  (never commit this file)
+
+agent:
+  name: "HermesCopilot"
+  description: "Hermes Agent powered by GitHub Copilot API"
+  max_turns: 20
+
+model:
+  provider: copilot
+  # Auth is OAuth-based; stored in ~/.hermes/auth.json after `hermes model`
+
+  # --- Model options via Copilot API (uncomment one) ---
+  # OpenAI models:
+  # gpt-4o           → best general capability; 128K context; recommended
+  # gpt-4o-mini      → faster and cheaper for simple tasks
+  # o3-mini          → reasoning model; slower; best for complex multi-step
+  #
+  # Anthropic models (availability depends on subscription tier):
+  # claude-sonnet-4-5  → strong code understanding; excellent instruction following
+  # claude-haiku-4-5   → fast and lightweight
+  #
+  # Google models:
+  # gemini-2.5-flash   → fast; good tool calling
+  default: gpt-4o
+
+  # GPT-4o supports 128K but 64K is practical — prevents context bloat in long sessions
+  context_length: 64000
+
+terminal:
+  backend: docker           # recommended: sandboxed execution with Copilot
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+toolsets:
+  enabled:
+    - terminal
+    - file
+    - web
+    - github
+    - skills
+    - memory
+  disabled:
+    - browser_automation
+    - home_assistant
+
+gateways:
+  telegram:
+    enabled: false
+    token: "${TELEGRAM_BOT_TOKEN}"
+  discord:
+    enabled: false
+    token: "${DISCORD_BOT_TOKEN}"
+
+storage:
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true
