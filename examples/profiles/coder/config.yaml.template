@@ -1,0 +1,38 @@
+model:
+  provider: copilot
+  default: gpt-4o
+  context_length: 64000
+
+toolsets:
+  enabled:
+    - terminal
+    - file
+    - web
+    - github
+    - mcp
+    - skills
+    - memory
+  disabled:
+    - google_workspace
+    - messaging_send
+    - home_assistant
+    - browser_automation
+
+terminal:
+  backend: docker
+  timeout: 180
+  mounts:
+    - source: ~/projects
+      target: /workspace
+      readonly: false
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+
+agent:
+  max_turns: 30
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2

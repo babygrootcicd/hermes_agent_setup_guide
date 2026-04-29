@@ -1,0 +1,24 @@
+model:
+  provider: google-gemini-cli
+  default: gemini-2.5-flash
+  context_length: 32768
+
+toolsets:
+  enabled:
+    - web
+    - file
+    - skills
+    - memory
+  disabled:
+    - terminal
+    - github
+    - google_workspace
+    - browser_automation
+    - code_execution
+    - messaging_send
+
+terminal:
+  backend: none
+
+agent:
+  max_turns: 15
