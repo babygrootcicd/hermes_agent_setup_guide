@@ -660,6 +660,7 @@ hermes chat --toolsets web,terminal,skills --max-turns 20
 [^faq]: `https://hermes-agent.nousresearch.com/docs/reference/faq`（FAQ & Troubleshooting）
 [^cli]: `https://hermes-agent.nousresearch.com/docs/reference/cli-commands`（CLI Commands Reference）
 [^contrib]: `https://github.com/NousResearch/hermes-agent/blob/main/CONTRIBUTING.md`（Contributing）
+<!-- LEGACY CONTENT (deprecated): 以下為舊版草稿，僅供比對，請勿引用/維護。
 1. 閉環自學與技能進化 (Self-Evolution & Skill Creation)
 這是 Hermes Agent 區別於其他開源 AI 框架（如 OpenClaw）的最大差異。
 
@@ -1844,3 +1845,4 @@ hermes chat --resume 20260426_103523_086f4d
 
 hermes chat -c / --resume
 = 有長期記憶 + 接回完整 session
+-->

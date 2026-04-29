@@ -1,0 +1,85 @@
+# Nightly GitHub & DevSecOps Digest — Cron Job Definition
+#
+# Fires weeknights at 02:00. Audits open PRs, CI status, and CVEs,
+# then delivers a structured DevSecOps digest to Telegram.
+#
+# BEFORE IMPORTING:
+#   Replace /path/to/your/project with your actual repository path.
+#
+# Import with:
+#   hermes cron import examples/cron/nightly-github-triage.yaml
+
+name: nightly-github-triage
+description: Weeknight DevSecOps digest — PR audit, CI status, CVE check, action items
+
+# ─── Schedule ──────────────────────────────────────────────────────────────
+# "0 2 * * 1-5" = 02:00 Monday–Friday
+schedule: "0 2 * * 1-5"
+
+# ─── Profile ───────────────────────────────────────────────────────────────
+profile: coder
+
+# ─── Working Directory ─────────────────────────────────────────────────────
+# AGENTS.md / CLAUDE.md / .cursorrules in this directory are auto-injected as context.
+# Terminal and file tools operate relative to this path.
+workdir: /path/to/your/project    # REPLACE THIS with your actual repo path
+# Example: /Users/dennis_leedennis_lee/projects/pandora-box-console
+
+# ─── Agent Prompt ──────────────────────────────────────────────────────────
+prompt: |
+  You are performing a nightly DevSecOps audit of this repository. Work through each section below and produce a structured digest.
+
+  SECTION 1 — Open PRs
+  List all open pull requests. For each:
+  - PR number, title, author, age (days open)
+  - Current CI status (passing / failing / pending)
+  - Any blocking review comments
+  - Security relevance: does it touch auth, dependencies, config, or secrets?
+  Flag PRs older than 7 days as stale.
+
+  SECTION 2 — CI/CD Status
+  Check the status of the last 5 workflow runs across all branches.
+  For any failure:
+  - Which job failed and on which branch
+  - The most likely root cause (parse the log if accessible)
+  - Suggested fix in 1–2 lines
+
+  SECTION 3 — Dependency CVE Scan
+  Check package.json, go.mod, requirements.txt (whichever exist) for known vulnerabilities.
+  Use npm audit / govulncheck / safety output if available in the working directory.
+  List: package name, CVE ID, severity (critical/high/medium), fix version.
+  Skip low/informational findings.
+
+  SECTION 4 — Secret & Sensitive Pattern Scan
+  Scan recent commits (last 24 hours) and staged changes for:
+  - Hardcoded API keys, tokens, passwords
+  - Private key material (-----BEGIN)
+  - Internal IP addresses or hostnames committed to code
+  Report any findings immediately. If clean, confirm clean.
+
+  SECTION 5 — Action Items
+  Produce a prioritised list of 3–5 action items for tomorrow morning.
+  Format: [CRITICAL|HIGH|MEDIUM] — description — owner if determinable.
+
+  Output in English. Use Markdown tables where appropriate. Keep total length under 2,000 words.
+
+# ─── Delivery ──────────────────────────────────────────────────────────────
+deliver: telegram
+
+# ─── Toolsets ──────────────────────────────────────────────────────────────
+toolsets:
+  - terminal   # run npm audit, govulncheck, git log
+  - file       # read package.json, go.mod, CI config
+  - github     # access PR list, CI run status via GitHub API
+  - web        # look up CVE details if needed
+  - skills     # apply repo-specific review conventions
+
+# ─── Agent Limits ──────────────────────────────────────────────────────────
+max_turns: 30       # complex multi-section audit needs more turns
+timeout: 600        # 10 minutes; CVE checks and GitHub API can be slow
+
+# ─── Failure Handling ──────────────────────────────────────────────────────
+on_failure:
+  action: notify
+  deliver: telegram
+  message: "Nightly triage failed at {timestamp}. Check ~/.hermes/logs/cron.log"

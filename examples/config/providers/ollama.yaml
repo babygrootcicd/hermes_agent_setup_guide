@@ -1,0 +1,101 @@
+# Hermes Agent — Provider Config: Ollama (Local Inference)
+#
+# Fully local. No data leaves your machine. No API costs.
+# Requires Ollama running locally: https://ollama.com
+#
+# Setup:
+#   1. Install Ollama: brew install ollama  (macOS)
+#      or: curl -fsSL https://ollama.com/install.sh | sh  (Linux)
+#   2. Pull a tool-calling model (see model table below)
+#   3. Start Ollama WITH the correct context length:
+#      OLLAMA_CONTEXT_LENGTH=32768 ollama serve
+#   4. Configure Hermes via wizard: hermes model → Custom endpoint
+#      URL: http://localhost:11434/v1 | API key: ollama | Model: see below
+#
+# WARNING: Context length MUST be set at the Ollama server level, not just in
+# this config. Setting only context_length here while Ollama defaults to 2048
+# will cause the agent to silently truncate memory and tool schemas.
+# Always start Ollama with: OLLAMA_CONTEXT_LENGTH=32768 ollama serve
+
+agent:
+  name: "HermesLocal"
+  description: "Hermes Agent with fully local Ollama inference"
+  max_turns: 20
+
+model:
+  provider: custom
+  base_url: "http://localhost:11434/v1"   # Ollama OpenAI-compatible endpoint
+  api_key: "ollama"                        # literal string "ollama"; Ollama ignores it
+
+  # --- Model selection table ---
+  # Model                       Pull command                        RAM   Tool calling  Best for
+  # qwen2.5-coder:7b            ollama pull qwen2.5-coder:7b        ~5GB  Excellent     Daily agent tasks (RECOMMENDED START)
+  # qwen2.5-coder:14b           ollama pull qwen2.5-coder:14b       ~9GB  Excellent     Better accuracy; still manageable
+  # qwen2.5:7b                  ollama pull qwen2.5:7b              ~5GB  Good          General assistant
+  # qwen2.5:14b                 ollama pull qwen2.5:14b             ~9GB  Good          Better reasoning
+  # mistral:7b-instruct         ollama pull mistral:7b-instruct     ~4GB  Moderate      Fast; basic tool use
+  # qwen2.5-coder:32b           ollama pull qwen2.5-coder:32b      ~20GB  Excellent     Apple Silicon 32GB+ only
+  # qwen2.5-coder:72b           ollama pull qwen2.5-coder:72b      ~45GB  Excellent     GPU server only; NOT for real-time agent
+  #
+  # AVOID for agentic use: hermes3, llama3, phi, gemma — weak or unreliable tool calling
+
+  default: qwen2.5-coder:7b
+
+  # Must match OLLAMA_CONTEXT_LENGTH env var set when starting ollama serve.
+  # 32768 is the practical sweet spot for local inference:
+  # - Fits MEMORY.md + USER.md + tool schemas + conversation without truncation
+  # - Does not cause prohibitive prefill latency on CPU/low-VRAM hardware
+  # - Do NOT set to 131072 on local models — prefill will be unacceptably slow
+  context_length: 32768
+
+terminal:
+  backend: local            # or "docker" for sandboxed execution
+  timeout: 240              # local models are slower; give more time
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+# PERFORMANCE TIP: Reduce toolsets to minimize system prompt size.
+# Each enabled toolset adds tool schemas — this slows first-token on local models.
+# Start minimal, add toolsets only when needed.
+toolsets:
+  enabled:
+    - terminal
+    - skills
+    - memory
+    # Add "web" only when you need web search
+    # Add "file" only when you need file editing
+  disabled:
+    - browser_automation   # avoid — large schema, high latency on local
+    - code_execution
+    - github
+    - google_workspace
+    - home_assistant
+
+gateways:
+  telegram:
+    enabled: false
+    token: "${TELEGRAM_BOT_TOKEN}"
+  discord:
+    enabled: false
+    token: "${DISCORD_BOT_TOKEN}"
+
+storage:
+  type: local
+  path: ~/.hermes
+
+# Reduce delegation to avoid spawning multiple concurrent local inference processes
+delegation:
+  max_concurrent_children: 1
+  max_spawn_depth: 1
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true
+
+# Privacy note:
+# With this configuration, ALL inference is local. Memory, sessions, skills, and
+# all LLM calls remain on your machine. No data is sent to external providers.
+# This makes Ollama the recommended backend for security-sensitive projects.

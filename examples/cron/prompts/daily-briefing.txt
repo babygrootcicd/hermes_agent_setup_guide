@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────────────
+# DAILY MORNING BRIEFING
+# Suggested cron:  0 8 * * *   (08:00 every day)
+# Toolsets needed: web, skills
+# Delivery:        --deliver telegram  (or discord / file)
+#
+# CUSTOMIZE:
+#   - Language: swap "Traditional Chinese" for your preferred language
+#   - Topics: add or remove topic blocks below
+#   - Source preferences: edit the "Prioritize" line
+#   - Summary length: change "2 sentences" to your preference
+#   - [YOUR_EXTRA_TOPIC]: replace with your own interest area
+# ─────────────────────────────────────────────────────────────────
+
+Search the web for the latest news published in the last 24 hours across the following topics. Produce a structured morning briefing.
+
+---
+
+TOPIC 1 — AI Agent Frameworks
+Search for: new GitHub repositories, papers, and releases related to AI agents, autonomous agents, multi-agent systems, and agentic frameworks.
+Prioritize: GitHub stars >100, arXiv papers, and posts from known research labs (Nous Research, Anthropic, OpenAI, DeepMind, Meta AI).
+Exclude: pure business announcements, investor news, or press releases that contain no technical content.
+
+TOPIC 2 — Open-Source LLM Releases
+Search for: new open-source language model releases, benchmark results, fine-tune releases, and quantization updates.
+Prioritize: Hugging Face model hub, arXiv, GitHub, and official model cards.
+Exclude: vaporware announcements without released weights or reproducible benchmarks.
+
+TOPIC 3 — Cloud Security & Zero Trust
+Search for: zero trust architecture news, cloud provider security advisories, new CVEs affecting cloud infrastructure, and IAM/identity security developments.
+Prioritize: vendor security blogs (AWS, GCP, Azure), CISA advisories, and independent security researchers.
+Exclude: marketing content without specific technical substance.
+
+TOPIC 4 — [YOUR_EXTRA_TOPIC]
+Search for: [CUSTOMIZE: describe what to search for]
+Prioritize: [CUSTOMIZE: preferred sources]
+Exclude: [CUSTOMIZE: what to filter out]
+
+---
+
+OUTPUT FORMAT:
+- Language: Traditional Chinese
+- Each topic: up to 3 items maximum
+- Per item: title, 2 sentences maximum summary, source URL
+- If nothing newsworthy found for a topic: write "無新消息" and skip
+- End with a one-line "Today's Signal" summary of the single most important finding across all topics
+
+Do not include: funding rounds, acquisitions, or business news unless they directly release open-source code or a public technical artifact.

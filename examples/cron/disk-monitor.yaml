@@ -1,0 +1,89 @@
+# Disk & Uptime Monitor — Cron Job Definition
+#
+# Fires every 2 hours. Checks disk usage on critical paths and uptime
+# of key services. Alerts via Telegram if thresholds are exceeded.
+#
+# Import with:
+#   hermes cron import examples/cron/disk-monitor.yaml
+
+name: disk-monitor
+description: Every-2-hours disk usage and service uptime check with 85% alert threshold
+
+# ─── Schedule ──────────────────────────────────────────────────────────────
+# "0 */2 * * *" = top of every even hour: 00:00, 02:00, 04:00, ... 22:00
+schedule: "0 */2 * * *"
+
+# ─── Profile ───────────────────────────────────────────────────────────────
+profile: security-lab
+
+# ─── Alert Threshold ───────────────────────────────────────────────────────
+# Used as a variable substituted into the prompt below.
+# If disk usage on any monitored path exceeds this %, produce a cleanup plan.
+alert_threshold: 85
+
+# ─── Agent Prompt ──────────────────────────────────────────────────────────
+prompt: |
+  You are performing an automated infrastructure health check. Work through the following checks and report results.
+
+  DISK USAGE CHECK
+  Check disk usage (df -h) and report usage for these specific paths if they exist:
+    - /var/opt/gitlab/backups    (GitLab backup storage)
+    - /var/opt/gitlab/git-data   (GitLab repository data)
+    - /var/log/journal            (systemd journal logs)
+    - /var/lib/docker             (Docker layer storage)
+    - /var/lib/loki               (Loki log storage)
+    - /var/lib/prometheus         (Prometheus TSDB)
+
+  For each path:
+  - Report: path | size used | size available | % used | status
+  - Status: OK (<70%) | WARNING (70–84%) | CRITICAL (≥85%)
+
+  If ANY path is at or above 85% usage:
+  1. Identify the largest directories/files contributing to usage (du -sh /* style)
+  2. Produce a specific cleanup plan with exact commands:
+     - For GitLab backups: list backups older than 7 days, provide delete command
+     - For Docker: docker system df, docker image prune / container prune commands
+     - For journals: journalctl --disk-usage, vacuum command with size/time target
+     - For Loki/Prometheus: check retention config, compaction status
+
+  UPTIME CHECK
+  Attempt to reach these internal endpoints and report HTTP status:
+    - GitLab web:     http://localhost:80 (or https://localhost:443)
+    - MinIO API:      http://localhost:9000/minio/health/live
+    - Grafana:        http://localhost:3000/api/health
+    - Prometheus:     http://localhost:9090/-/healthy
+    - Loki:           http://localhost:3100/ready
+
+  For each: endpoint | status | response time | OK/DOWN
+
+  RETENTION ANOMALY CHECK
+  If Loki or Prometheus data directories are large:
+  - Check if retention is configured (look for --storage.tsdb.retention.time in Prometheus args)
+  - Check if Loki compaction is enabled
+  - Flag if retention appears misconfigured
+
+  OUTPUT FORMAT:
+  - If everything is OK (all <85%, all services up): send a single line "✓ Health check passed — {timestamp}"
+  - If any WARNING or CRITICAL: send full report with cleanup plan
+  - Use a table for disk and uptime summary
+  - Keep alert message under 3,000 characters to fit Telegram message limit
+
+# ─── Delivery ──────────────────────────────────────────────────────────────
+# Only deliver if there are warnings or critical alerts (suppress OK results to reduce noise)
+deliver: telegram
+deliver_on: always    # change to "failure_only" to suppress OK messages
+
+# ─── Toolsets ──────────────────────────────────────────────────────────────
+toolsets:
+  - terminal   # df, du, curl, docker, journalctl
+  - skills     # apply any learned cleanup SOPs
+
+# ─── Agent Limits ──────────────────────────────────────────────────────────
+max_turns: 20
+timeout: 120     # disk checks should complete quickly
+
+# ─── Failure Handling ──────────────────────────────────────────────────────
+on_failure:
+  action: notify
+  deliver: telegram
+  message: "Disk monitor script failed at {timestamp} — agent could not run checks. Manual inspection required."
