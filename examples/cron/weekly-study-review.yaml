@@ -1,0 +1,84 @@
+# Weekly Study Review — Cron Job Definition
+#
+# Fires every Sunday at 20:00. Analyses CCSP study patterns from the week,
+# produces a structured review document, and saves it to a dated Markdown file.
+#
+# Import with:
+#   hermes cron import examples/cron/weekly-study-review.yaml
+
+name: weekly-study-review
+description: Sunday evening CCSP/security cert study review — patterns, gaps, drill list
+
+# ─── Schedule ──────────────────────────────────────────────────────────────
+# "0 20 * * 0" = 20:00 every Sunday (0 = Sunday in cron)
+schedule: "0 20 * * 0"
+
+# ─── Profile ───────────────────────────────────────────────────────────────
+profile: study
+
+# ─── Agent Prompt ──────────────────────────────────────────────────────────
+prompt: |
+  Produce this week's CCSP study review. Search memory and any study notes accessible in ~/study/ for patterns from the past 7 days. Structure the output exactly as follows:
+
+  # CCSP Weekly Review — {current_date}
+
+  ## 1. Domain Coverage
+  List which CCSP domains were studied this week and approximate time allocation.
+  Domains: D1 Cloud Concepts / D2 Cloud Data Security / D3 Cloud Platform & Infrastructure /
+           D4 Cloud Application Security / D5 Cloud Security Operations / D6 Legal, Risk & Compliance
+  Format as a table: Domain | Topics Covered | Time Spent | Proficiency (self-assessed 1–5)
+
+  ## 2. Repeated Misconceptions
+  List concepts that were answered incorrectly more than once this week.
+  For each: concept name | correct understanding | common trap | source domain
+  Be specific — name the exact sub-topic, not just the domain.
+
+  ## 3. Exam Trap Patterns
+  Identify structural patterns in questions that caused errors. Examples:
+  - "Best" vs "Most" vs "First" qualifier confusion
+  - Questions asking for CISO perspective vs technical perspective
+  - Regulatory jurisdiction edge cases
+  - Risk treatment vs risk response terminology
+  List each pattern with a concrete example of when it caused an error.
+
+  ## 4. Next Week's Drill List
+  Based on sections 2 and 3, produce a prioritised list of 5 specific topics to drill next week.
+  Format: [Priority 1–5] | Topic | Specific sub-area | Recommended resource/question bank
+
+  ## 5. Progress Metrics (if trackable)
+  - Questions attempted this week:
+  - Accuracy rate (% correct):
+  - Domains needing most attention:
+  - Trend vs previous week (improving / stable / declining):
+
+  STYLE RULES:
+  - Write in concise, factual prose — no first-person pronouns
+  - Use Markdown tables and numbered lists
+  - No filler phrases ("it is important to note that...")
+  - If data for a section is unavailable, write "No data available this week" and skip
+
+# ─── Delivery ──────────────────────────────────────────────────────────────
+# Saves output to a dated Markdown file rather than sending to a chat platform.
+deliver: file
+output_path: "~/study/weekly-review-{date}.md"    # {date} is substituted as YYYY-MM-DD
+
+# Optionally also notify via Telegram when the file is ready:
+# also_notify: telegram
+# also_notify_message: "Weekly study review saved to ~/study/weekly-review-{date}.md"
+
+# ─── Toolsets ──────────────────────────────────────────────────────────────
+toolsets:
+  - file     # read study notes from ~/study/
+  - skills   # apply learned study tracking SOPs
+  - memory   # retrieve session memory about study sessions
+
+# ─── Agent Limits ──────────────────────────────────────────────────────────
+max_turns: 15
+timeout: 180
+
+# ─── Failure Handling ──────────────────────────────────────────────────────
+on_failure:
+  action: notify
+  deliver: file
+  output_path: "~/study/weekly-review-{date}-FAILED.txt"
+  message: "Weekly review failed at {timestamp}. Error: {error}"

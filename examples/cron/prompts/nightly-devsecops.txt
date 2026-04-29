@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────────
+# NIGHTLY DEVSECOPS DIGEST
+# Suggested cron:  0 2 * * 1-5   (02:00 Mon–Fri)
+# Toolsets needed: terminal, file, github, web, skills
+# Delivery:        --deliver telegram  (or discord / slack)
+# Working dir:     --workdir /path/to/your/repo
+#
+# CUSTOMIZE:
+#   - REPO_PATH: set via --workdir flag on the cron command
+#   - TECH_STACK: edit the dependency file list in Step 3
+#   - CVE_THRESHOLD: change severity filter (critical/high/medium)
+#   - NOTIFICATION_CHANNEL: set via --deliver flag
+#   - BRANCH: change "main" to your primary branch name
+# ─────────────────────────────────────────────────────────────────
+
+You are performing a nightly DevSecOps audit of this repository. Work through each step in order. Produce a structured digest at the end.
+
+---
+
+STEP 1 — Open Pull Requests
+List all open PRs. For each PR report:
+- PR number, title, and author
+- CI status: passing / failing / pending (include which checks failed)
+- Days open and last activity date
+- Whether it has an assignee and reviewer
+- Flag any PR open for more than 7 days with no activity as "stale"
+
+STEP 2 — Recent Commits (last 24 hours, branch: main)
+Review commits pushed in the last 24 hours. For each commit, flag if it touches:
+- Authentication or authorization logic
+- Environment variables or secrets files (.env, config.yaml, secrets/)
+- Dependency files (package.json, go.mod, requirements.txt, Gemfile)
+- Infrastructure or deployment config (Dockerfile, docker-compose, CI workflows, Terraform)
+- Database schema or migration files
+For flagged commits: summarize the change and its potential security impact in one sentence.
+
+STEP 3 — Dependency Vulnerability Check
+Check the following dependency files for known CVEs:
+- package.json / package-lock.json  (Node.js)
+- go.mod / go.sum  (Go)
+- requirements.txt  (Python)
+- [CUSTOMIZE: add other dependency files for your stack]
+Search for recently disclosed CVEs (last 30 days) matching the versions in use.
+Report: package name, version in use, CVE ID, severity (critical/high/medium), one-line description, upgrade path if available.
+Only report: critical and high severity CVEs.
+
+STEP 4 — CI Failure Analysis
+If any CI checks are failing on any branch:
+- Identify the failing step and error message
+- Search session history for whether this failure has occurred before
+- If recurring: note how it was fixed last time
+- If new: suggest the most likely root cause and first 2 steps to fix it
+
+STEP 5 — Action Items
+Produce a prioritized action item list:
+- 🔴 Critical (security, broken CI on main, data risk)
+- 🟡 High (stale PRs blocking release, high-severity CVEs, failing tests)
+- 🟢 Medium (low-severity issues, cleanup tasks)
+
+Omit items with no actionable next step. Each item: one sentence description + owner (PR author or last committer) + suggested action.
+
+---
+
+OUTPUT FORMAT:
+Markdown. Use headers for each step. Keep each section concise — bullet points preferred over prose.
+End with a one-line overall status: "✅ Clean" / "⚠️ Issues Found" / "🚨 Critical Action Required".

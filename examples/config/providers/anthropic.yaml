@@ -1,0 +1,105 @@
+# Hermes Agent — Provider Config: Anthropic (Claude Direct API)
+#
+# IMPORTANT — SUBSCRIPTION vs API KEY:
+#   Claude Pro / Max subscription does NOT provide free API access.
+#   API billing is managed separately from your Claude.ai subscription.
+#
+#   To use this config you need ONE of:
+#   (a) ANTHROPIC_API_KEY with API billing enabled at console.anthropic.com
+#       → Pay-per-token; no subscription required
+#   (b) Claude Max subscription + extra usage credits
+#       → For Hermes OAuth path (run `hermes model` → select Anthropic OAuth)
+#       → Hermes does NOT consume your base Max allowance; it uses extra credits
+#
+#   Claude Pro users: use Gemini (gemini-api-key.yaml) or Copilot (copilot.yaml) instead.
+#   Those options integrate with Claude's capabilities via those gateways at no extra cost.
+#
+# Setup (API key path):
+#   1. Visit https://console.anthropic.com → API Keys → Create Key
+#   2. Enable billing and add a payment method
+#   3. Add to ~/.hermes/.env:  ANTHROPIC_API_KEY=sk-ant-...
+#
+# Setup (OAuth path — requires Claude Max + extra credits):
+#   Run: hermes model → select "Anthropic OAuth"
+#   Complete device code flow. Credentials saved to ~/.hermes/auth.json
+#
+# Best used when:
+#   - You need Claude's citation and document analysis capabilities
+#   - Long-form writing with high instruction fidelity
+#   - Projects where you've already budgeted API spend
+#   - You want the strongest instruction-following for complex agentic tasks
+#
+# Prompt caching note:
+#   Hermes benefits from Anthropic's prompt caching feature. System prompts
+#   (including MEMORY.md + USER.md) are cached after the first request per
+#   session, reducing cost and latency on subsequent turns significantly.
+#   Cache TTL: 5 minutes for default cache; extended cache available on Sonnet.
+
+agent:
+  name: "HermesClaude"
+  description: "Hermes Agent powered by Anthropic Claude API"
+  max_turns: 20
+
+model:
+  provider: anthropic
+  api_key: "${ANTHROPIC_API_KEY}"    # set in ~/.hermes/.env
+
+  # --- Model options ---
+  # claude-opus-4-7     → highest capability; slowest; most expensive
+  #                       best for: complex multi-step reasoning, long documents
+  # claude-sonnet-4-6   → best balance of speed and capability (RECOMMENDED)
+  #                       best for: coding, DevSecOps, detailed instructions
+  # claude-haiku-4-5    → fastest and cheapest Claude model
+  #                       best for: simple tasks, high-volume cron jobs
+  default: claude-sonnet-4-6
+
+  # Claude Sonnet supports 200K tokens but 64K keeps agent sessions manageable.
+  # System prompt (with MEMORY.md + USER.md + tool schemas) is cached automatically.
+  context_length: 64000
+
+terminal:
+  backend: docker           # recommended: Claude can generate complex commands
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+toolsets:
+  enabled:
+    - terminal
+    - file
+    - web
+    - skills
+    - memory
+    - github
+  disabled:
+    - browser_automation
+    - home_assistant
+
+gateways:
+  telegram:
+    enabled: false
+    token: "${TELEGRAM_BOT_TOKEN}"
+  discord:
+    enabled: false
+    token: "${DISCORD_BOT_TOKEN}"
+
+storage:
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true
+
+# Cost guidance (approximate, check console.anthropic.com for current pricing):
+# claude-opus-4-7:    $15/M input tokens,  $75/M output tokens
+# claude-sonnet-4-6:  $3/M input tokens,   $15/M output tokens
+# claude-haiku-4-5:   $0.25/M input,       $1.25/M output
+# With prompt caching: cache hits cost ~90% less than full input pricing.

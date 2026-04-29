@@ -1,0 +1,79 @@
+# ─────────────────────────────────────────────────────────────────
+# DISK USAGE MONITOR & CLEANUP PLANNER
+# Suggested cron:  0 */2 * * *   (every 2 hours)
+# Toolsets needed: terminal, skills
+# Delivery:        --deliver telegram
+#
+# CUSTOMIZE:
+#   - MONITORED_PATHS: edit the path list in Step 1
+#   - ALERT_THRESHOLD: change 85 to your preferred percentage
+#   - PROMETHEUS_URL: set your Prometheus endpoint
+#   - LOKI_URL: set your Loki endpoint
+#   - SERVER_SSH: if monitoring a remote server, add SSH context
+# ─────────────────────────────────────────────────────────────────
+
+You are performing a disk usage health check. Work through each step. Only send an alert message if a threshold is exceeded or a retention anomaly is found.
+
+---
+
+STEP 1 — Disk Usage Check
+Run `df -h` and check usage for the following mount points and paths:
+- / (root filesystem)
+- /var/opt/gitlab/backups     [CUSTOMIZE: GitLab backup path]
+- /var/opt/gitlab/git-data    [CUSTOMIZE: GitLab repository storage]
+- /var/log/journal             [CUSTOMIZE: systemd journal logs]
+- /var/lib/docker              [CUSTOMIZE: Docker storage]
+- [CUSTOMIZE: add additional paths]
+
+For each path, report: path, total size, used, available, usage percentage.
+
+Alert threshold: 85% [CUSTOMIZE: change threshold]
+If any path exceeds the threshold, proceed to Step 2.
+If all paths are below the threshold, output only: "✅ All disks healthy — [timestamp]" and stop.
+
+STEP 2 — Root Cause Identification (only if threshold exceeded)
+For each path that exceeded the threshold:
+Run `du -sh <path>/*` (one level deep) to identify the largest sub-directories.
+List the top 5 largest items with sizes.
+Categorize each as: backup files / log files / Docker layers / application data / unknown.
+
+STEP 3 — Cleanup Plan (only if threshold exceeded)
+Based on the findings in Step 2, produce a cleanup plan:
+
+For backup files:
+- List backups older than 30 days [CUSTOMIZE: retention period]
+- Estimate reclaim size
+- Provide exact commands to remove safely
+
+For Docker:
+- Run `docker system df` to show reclaimable space
+- Provide: `docker system prune --volumes -f` with estimated reclaim size
+- List stopped containers, dangling images, and unused volumes separately
+
+For journal logs:
+- Provide: `journalctl --disk-usage`
+- Provide: `journalctl --vacuum-time=14d` with estimated reclaim [CUSTOMIZE: retention]
+
+For application data:
+- Flag for manual review — do not suggest automatic deletion
+
+STEP 4 — Retention Check
+Check Prometheus TSDB retention:
+- Query: `prometheus_tsdb_storage_blocks_bytes` at [CUSTOMIZE: http://prometheus.internal:9090]
+- Expected retention: [CUSTOMIZE: 15d] — flag if blocks older than retention period exist
+
+Check Loki chunk retention:
+- Query Loki status at [CUSTOMIZE: http://loki.internal:3100/loki/api/v1/status/buildinfo]
+- Flag if chunk storage is growing faster than expected (>10% increase since last check)
+
+---
+
+OUTPUT FORMAT:
+If all healthy: single line "✅ All disks healthy — [timestamp]"
+If issues found:
+  🚨 DISK ALERT — [timestamp]
+  Path: [path] — [usage]% used ([available] free)
+  Largest items: [list]
+  Cleanup plan: [numbered steps with exact commands]
+  Estimated reclaim: [size]
+  Retention status: [OK / WARNING]

@@ -1,0 +1,108 @@
+# Hermes Agent — Hardened Sandbox Image
+#
+# This image is used as the execution environment for Hermes Agent terminal
+# tool calls when `terminal.backend: docker` is configured.
+#
+# Design goals:
+#   - Non-root execution (UID 1000)
+#   - Minimal attack surface (slim base, no unnecessary packages)
+#   - No SETUID binaries
+#   - Read-only root filesystem compatible (writable paths via tmpfs/volumes)
+#   - TERM=dumb to match the Hermes PTY convention in this repo
+#
+# Build:
+#   docker build -f examples/security/Dockerfile.sandbox -t hermes-sandbox:latest .
+
+FROM debian:bookworm-slim
+
+# ── Build-time metadata ────────────────────────────────────────────────────────
+LABEL maintainer="Hermes Agent Setup Guide"
+LABEL description="Hardened sandbox for Hermes Agent terminal tool execution"
+LABEL org.opencontainers.image.source="https://github.com/dennislee/hermes_agent_setup_guide"
+
+# ── System packages ────────────────────────────────────────────────────────────
+# Install only what agent-run code typically needs. Keep the layer count low.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Core utilities
+    curl \
+    wget \
+    ca-certificates \
+    git \
+    # Data processing
+    jq \
+    # Search tools (agents use these for code analysis)
+    ripgrep \
+    fd-find \
+    # Python runtime
+    python3 \
+    python3-pip \
+    python3-venv \
+    # Node.js runtime (for JS/TS projects)
+    nodejs \
+    npm \
+    # Shell and text tools
+    bash \
+    coreutils \
+    findutils \
+    grep \
+    sed \
+    gawk \
+    # Archive tools
+    tar \
+    gzip \
+    unzip \
+    # Network diagnostics (intentionally minimal — no nc/ncat/socat)
+    dnsutils \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# ── Remove SETUID / SETGID binaries ────────────────────────────────────────────
+# These could be used for privilege escalation inside the container.
+RUN find / -xdev \( -perm -4000 -o -perm -2000 \) -type f -exec chmod a-s {} \; 2>/dev/null || true
+
+# ── Create non-root user ────────────────────────────────────────────────────────
+# UID/GID 1000 matches the most common Linux desktop user — simplifies bind mount
+# permissions when mounting a host project directory owned by UID 1000.
+RUN groupadd --gid 1000 hermes \
+    && useradd \
+        --uid 1000 \
+        --gid 1000 \
+        --home-dir /home/hermes \
+        --create-home \
+        --shell /bin/bash \
+        --comment "Hermes sandbox user" \
+        hermes
+
+# ── pip: install to user directory, not system ─────────────────────────────────
+ENV PIP_USER=1
+ENV PYTHONUSERBASE=/home/hermes/.local
+
+# ── Working directory ──────────────────────────────────────────────────────────
+# Agent file operations are relative to /workspace, which is mounted from the host.
+RUN mkdir -p /workspace && chown hermes:hermes /workspace
+WORKDIR /workspace
+
+# ── Environment ───────────────────────────────────────────────────────────────
+# TERM=dumb: prevents curses/ANSI codes from corrupting captured output.
+# Matches the PTY convention established in the main repo's Hermes integration.
+ENV TERM=dumb
+ENV HOME=/home/hermes
+ENV PATH="/home/hermes/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# No shell history — prevents accidental credential capture in history files.
+ENV HISTFILE=/dev/null
+ENV HISTSIZE=0
+
+# Python: don't write .pyc files (cleaner read-only FS operation)
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Node: point npm cache to a writable tmpfs path (configured at runtime)
+ENV npm_config_cache=/tmp/.npm
+
+# ── Drop to non-root ──────────────────────────────────────────────────────────
+USER hermes
+
+# ── Default command ───────────────────────────────────────────────────────────
+# In production Hermes injects its own command; this is used for manual testing.
+CMD ["/bin/bash"]
