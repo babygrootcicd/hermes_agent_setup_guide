@@ -126,7 +126,7 @@ CONFIG_CONTENT='# Hermes Agent Configuration
 model:
   provider: ""        # e.g. auto | gemini | copilot | anthropic | openrouter
   default: ""         # e.g. gemini-2.5-flash | gpt-4o | claude-sonnet-4-5
-  context_length: 32768
+  context_length: 65536
   # base_url: http://localhost:11434/v1
   # api_key: ollama
 

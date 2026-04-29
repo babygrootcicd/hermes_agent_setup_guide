@@ -7,8 +7,8 @@ set -euo pipefail
 
 # --- Configuration ---
 DEFAULT_OLLAMA_URL="http://127.0.0.1:11434/v1"
-DEFAULT_MODEL="qwen2.5-coder:7b"
-DEFAULT_CONTEXT_LENGTH="32768"
+DEFAULT_MODEL="qwen32b-64k:latest"
+DEFAULT_CONTEXT_LENGTH="65536"
 
 # --- UI Helpers ---
 RED='\033[0;31m'
@@ -111,7 +111,7 @@ echo -e "  API key:        ${GREEN}ollama${NC}"
 echo -e "  Model:          ${GREEN}${DEFAULT_MODEL}${NC}"
 echo -e "  Context length: ${GREEN}${DEFAULT_CONTEXT_LENGTH}${NC}"
 echo ""
-warn "Avoid 'hermes3' for agentic tool use; use qwen2.5-coder models instead."
+warn "Avoid 'hermes3' for agentic tool use; use 64k+ context models (e.g. qwen32b-64k:latest)."
 
 # 5. Verification instructions
 echo ""

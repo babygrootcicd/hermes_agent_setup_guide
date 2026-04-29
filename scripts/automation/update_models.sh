@@ -12,8 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 RECOMMENDED_MODELS=(
-  "qwen2.5-coder:7b"
-  "qwen2.5-coder:14b"
+  "qwen32b-64k:latest"
+  "qwen2.5-coder:32b"
 )
 
 info()  { echo -e "${BLUE}[INFO]${NC} $*"; }
@@ -59,7 +59,7 @@ pull_model() {
 
   if [[ "${model_name}" == "hermes3" ]]; then
     warn "'hermes3' is not recommended for agentic tool-calling workflows."
-    warn "Consider: qwen2.5-coder:7b or qwen2.5-coder:14b"
+    warn "Consider: qwen32b-64k:latest or qwen2.5-coder:32b"
   fi
 
   info "Pulling model: ${model_name}"

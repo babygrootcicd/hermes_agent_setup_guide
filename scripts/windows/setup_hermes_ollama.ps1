@@ -2,8 +2,8 @@
 # Windows/WSL2 setup script for Hermes Agent + Ollama
 
 $DefaultOllamaUrl = "http://127.0.0.1:11434/v1"
-$DefaultModel = "qwen2.5-coder:7b"
-$DefaultContextLength = "32768"
+$DefaultModel = "qwen32b-64k:latest"
+$DefaultContextLength = "65536"
 
 # --- UI Helpers ---
 function Write-Info ($Message) { Write-Host "[INFO] $Message" -ForegroundColor Blue }
@@ -129,7 +129,7 @@ if ($hostIP) {
 Write-Host "  API key:        ollama" -ForegroundColor Cyan
 Write-Host "  Model:          $DefaultModel" -ForegroundColor Cyan
 Write-Host "  Context length: $DefaultContextLength" -ForegroundColor Cyan
-Write-Warning "Avoid hermes3 for agentic tool use; prefer qwen2.5-coder models."
+Write-Warning "Avoid hermes3 for agentic tool use; prefer 64k+ context models (e.g. qwen32b-64k:latest)."
 
 # 6. Verification and Troubleshooting
 Write-Host ""

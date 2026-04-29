@@ -15,8 +15,8 @@ This document provides exact, executable steps to initialize, configure, and sta
   - Windows with WSL2 (Hermes on native Windows is not supported)
 - Default local model settings used across this guide:
   - Ollama URL: `http://127.0.0.1:11434/v1`
-  - Model: `qwen2.5-coder:7b`
-  - Context length: `32768`
+  - Model: `qwen32b-64k:latest`
+  - Context length: `65536`
 
 ---
 
@@ -70,7 +70,7 @@ cd /Users/dennis_leedennis_lee/Documents/GitHub/hermes_agent_setup_guide
 What this script does:
 1. Checks Ollama installation and running state.
 2. Installs Hermes via official install script if missing.
-3. Optionally pulls `qwen2.5-coder:7b`.
+3. Optionally pulls `qwen32b-64k:latest`.
 4. Prints exact provider values for `hermes model`.
 
 Optional safe scaffold for `~/.hermes` structure:
@@ -92,7 +92,7 @@ cd /Users/dennis_leedennis_lee/Documents/GitHub/hermes_agent_setup_guide
 這個腳本會做：
 1. 檢查 Ollama 是否安裝且服務可用。
 2. 若未安裝 Hermes，透過官方安裝腳本安裝。
-3. 可選擇是否下載 `qwen2.5-coder:7b`。
+3. 可選擇是否下載 `qwen32b-64k:latest`。
 4. 輸出 `hermes model` 需要填的完整參數。
 
 可選：安全建立 `~/.hermes` 目錄骨架（不覆寫既有檔案）：
@@ -114,8 +114,8 @@ hermes model
 Choose `Custom endpoint` and fill:
 - URL: `http://127.0.0.1:11434/v1`
 - API key: `ollama`
-- Model: `qwen2.5-coder:7b`
-- Context length: `32768`
+- Model: `qwen32b-64k:latest`
+- Context length: `65536`
 
 Important:
 - Avoid `hermes3` for agentic tool use.
@@ -132,8 +132,8 @@ hermes model
 選擇 `Custom endpoint`，並填入：
 - URL: `http://127.0.0.1:11434/v1`
 - API key: `ollama`
-- Model: `qwen2.5-coder:7b`
-- Context length: `32768`
+- Model: `qwen32b-64k:latest`
+- Context length: `65536`
 
 重點：
 - 不建議使用 `hermes3` 做 agent 工具流程。
@@ -144,7 +144,7 @@ hermes model
 #### English
 
 ```bash
-hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
 ```
 
 Then test session persistence:
@@ -157,7 +157,7 @@ hermes sessions list
 #### 繁體中文
 
 ```bash
-hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
 ```
 
 接著測試 session 延續：
@@ -271,8 +271,8 @@ hermes model
 Choose `Custom endpoint` and set:
 - URL: `http://<windows-host-ip>:11434/v1` (preferred)
 - API key: `ollama`
-- Model: `qwen2.5-coder:7b`
-- Context length: `32768`
+- Model: `qwen32b-64k:latest`
+- Context length: `65536`
 
 #### 繁體中文
 
@@ -294,21 +294,21 @@ hermes model
 選 `Custom endpoint`，設定：
 - URL: `http://<windows-host-ip>:11434/v1`（建議）
 - API key: `ollama`
-- Model: `qwen2.5-coder:7b`
-- Context length: `32768`
+- Model: `qwen32b-64k:latest`
+- Context length: `65536`
 
 ### 3.3 Start in WSL
 
 #### English
 
 ```bash
-hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
 ```
 
 #### 繁體中文
 
 ```bash
-hermes chat --model qwen2.5-coder:7b --toolsets terminal,skills --max-turns 12
+hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
 ```
 
 ### 3.4 Verify on Windows + WSL
@@ -389,7 +389,7 @@ Model lifecycle helper:
 
 ```bash
 ./scripts/automation/update_models.sh recommended
-./scripts/automation/update_models.sh pull qwen2.5-coder:7b
+./scripts/automation/update_models.sh pull qwen32b-64k:latest
 ./scripts/automation/update_models.sh update
 ```
 
@@ -411,7 +411,7 @@ Model lifecycle helper:
 
 ```bash
 ./scripts/automation/update_models.sh recommended
-./scripts/automation/update_models.sh pull qwen2.5-coder:7b
+./scripts/automation/update_models.sh pull qwen32b-64k:latest
 ./scripts/automation/update_models.sh update
 ```
 
