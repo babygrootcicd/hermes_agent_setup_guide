@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u
+set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BENCH_ROOT="$ROOT_DIR/docs/enhancements/benchmarks"
@@ -49,7 +49,7 @@ extract_real() {
 
 run_log "01_hermes_version.log" bash -lc 'echo "== hermes --version =="; hermes --version'
 run_log "02_ollama_version.log" bash -lc 'echo "== ollama version =="; ollama --version'
-run_log "03_verify.log" bash -lc "echo '== verify.sh =='; cd '$ROOT_DIR' && ./scripts/common/verify.sh"
+run_log "03_verify.log" bash -lc "echo '== verify.sh =='; cd '$ROOT_DIR' && ./scripts/common/verify.sh" || true
 run_timed_shell "04_ollama_tags.log" "ollama tags check" "curl -fsS $OLLAMA_URL/api/tags"
 
 run_log "05_profile_apply.log" bash -lc "
@@ -89,7 +89,7 @@ run_timed_shell \
   "baseline compare chat: qwen32b-64k terminal,skills max-turns=1" \
   "printf '/quit\n' | hermes chat --model $BASELINE_MODEL --toolsets terminal,skills --max-turns 1"
 
-run_log "09_process_snapshot.log" bash -lc 'echo "== process snapshot =="; ps aux | rg "hermes|ollama"'
+run_log "09_process_snapshot.log" bash -lc 'echo "== process snapshot =="; ps aux | rg "hermes|ollama"' || true
 
 FAST_TERM_REAL="$(extract_real 06_chat_fast_terminal_skills.log)"
 FAST_WEB_REAL="$(extract_real 07_chat_fast_web_terminal_skills.log)"
