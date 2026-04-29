@@ -1,0 +1,17 @@
+Phase 05 — Provider Config Templates: COMPLETE
+
+Created files:
+- examples/config/providers/gemini-api-key.yaml
+- examples/config/providers/gemini-oauth.yaml
+- examples/config/providers/copilot.yaml
+- examples/config/providers/ollama.yaml
+- examples/config/providers/openrouter.yaml
+- examples/config/providers/anthropic.yaml
+
+Also created directory:
+- examples/config/providers/
+- .agent-progress/
+
+Each file includes: full config.yaml structure, all relevant model options as comments,
+rate limit / pricing notes, setup instructions, auth paths, security settings,
+toolset recommendations, and delegation limits.

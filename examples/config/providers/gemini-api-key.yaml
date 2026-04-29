@@ -1,0 +1,78 @@
+# Hermes Agent — Provider Config: Google Gemini (API Key)
+# Best choice for free daily use — get your key at https://aistudio.google.com
+#
+# Setup:
+#   1. Visit https://aistudio.google.com → "Get API key"
+#   2. Add to ~/.hermes/.env:  GOOGLE_API_KEY=your_key_here
+#   3. Copy this file to ~/.hermes/config.yaml (or merge relevant sections)
+#
+# Run setup wizard instead:  hermes model  → select "Google Gemini API key"
+
+agent:
+  name: "HermesGemini"
+  description: "Hermes Agent powered by Google Gemini API"
+  max_turns: 20
+
+model:
+  provider: gemini
+  api_key: "${GOOGLE_API_KEY}"      # set in ~/.hermes/.env
+
+  # --- Model options (uncomment one) ---
+  # gemini-2.5-flash  → best for everyday tasks; lowest latency; FREE tier available
+  # gemini-2.5-pro    → complex reasoning, long documents; FREE tier (limited RPD)
+  # gemini-2.0-flash  → fastest first-token; moderate capability
+  default: gemini-2.5-flash
+
+  # Safe default for agentic use. Gemini supports up to 1M tokens but
+  # large contexts slow tool-schema injection on first turn.
+  context_length: 32768
+
+# --- Free Tier Rate Limits (as of 2025) ---
+# Model                 RPM    RPD      TPM (input)
+# gemini-2.5-flash       10   1,500    250,000
+# gemini-2.5-pro          2      50     32,000
+# gemini-2.0-flash       15   1,500    1,000,000
+#
+# RPM = requests per minute | RPD = requests per day | TPM = tokens per minute
+# Rate limits apply per API key. For higher limits, enable billing on Google Cloud.
+
+terminal:
+  backend: local          # switch to "docker" for sandboxed execution
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+# Recommended starting toolsets — add more as needed
+toolsets:
+  enabled:
+    - terminal
+    - web
+    - skills
+    - memory
+  disabled:
+    - browser_automation   # enable only when needed; slow to initialize
+    - code_execution
+    - home_assistant
+
+gateways:
+  telegram:
+    enabled: false
+    token: "${TELEGRAM_BOT_TOKEN}"
+  discord:
+    enabled: false
+    token: "${DISCORD_BOT_TOKEN}"
+
+storage:
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true

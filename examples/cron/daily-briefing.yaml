@@ -1,0 +1,82 @@
+# Daily Morning Briefing — Cron Job Definition
+#
+# Fires every day at 08:00, searches for news across 4 topic areas,
+# summarises in Traditional Chinese, and delivers to Telegram.
+#
+# Import with:
+#   hermes cron import examples/cron/daily-briefing.yaml
+#
+# Or create manually:
+#   hermes cron create "0 8 * * *" \
+#     --profile personal \
+#     --prompt "$(cat examples/cron/prompts/daily-briefing.txt)" \
+#     --deliver telegram
+
+name: daily-briefing
+description: Morning news briefing across AI, security, LLM, and scholarship topics
+
+# ─── Schedule ──────────────────────────────────────────────────────────────
+# Standard cron expression. Format: minute hour day-of-month month day-of-week
+# "0 8 * * *" = 08:00 every day
+schedule: "0 8 * * *"
+
+# ─── Profile ───────────────────────────────────────────────────────────────
+# Which Hermes profile to run this job under.
+# Uses that profile's config.yaml, model, toolsets, and credentials.
+profile: personal
+
+# ─── Agent Prompt ──────────────────────────────────────────────────────────
+prompt: |
+  You are producing a daily morning briefing. Search the web for today's top news across the following four areas. For each area, find the 3 most significant items from the past 24 hours.
+
+  AREA 1 — AI Agent Frameworks & Open-Source LLMs
+  Focus: new model releases, significant GitHub repos, research papers, framework updates (LangChain, LlamaIndex, AutoGen, Hermes, CrewAI, etc.)
+  Exclude: vague "AI will change everything" opinion pieces, funding news unless the tool is open-source.
+
+  AREA 2 — Cloud Security & Zero Trust
+  Focus: CVEs with active exploits, zero-trust architecture updates, cloud provider security incidents, new defensive tooling.
+  Exclude: marketing content, compliance checklists without new findings.
+
+  AREA 3 — LLM Research & Alignment
+  Focus: arXiv papers (cs.AI, cs.LG, cs.CR), model benchmarks, capability evaluations, safety research.
+  Prioritise papers with open-source code or reproducible results.
+
+  AREA 4 — UK University Scholarships & Funding
+  Focus: deadlines opening or closing in the next 30 days, new scholarship announcements for international students, University of Glasgow MSc programmes.
+
+  FORMAT:
+  - Respond in Traditional Chinese
+  - Group by area with a clear heading
+  - Maximum 2 sentences per item
+  - Include source link for every item
+  - If nothing significant happened in an area, say so in one line rather than padding
+
+# ─── Delivery ──────────────────────────────────────────────────────────────
+deliver: telegram
+# deliver: discord
+# deliver: "file:~/briefings/daily-{date}.md"   # uncomment to save to file instead
+
+# ─── Toolsets ──────────────────────────────────────────────────────────────
+toolsets:
+  - web      # required for news search
+  - skills   # apply any learned briefing preferences
+
+# ─── Agent Limits ──────────────────────────────────────────────────────────
+max_turns: 15         # enough for 4 searches + synthesis
+timeout: 300          # seconds; fail-safe if web search hangs
+
+# ─── Failure Handling ──────────────────────────────────────────────────────
+on_failure:
+  action: notify
+  deliver: telegram
+  message: "Daily briefing failed at {timestamp}. Error: {error}. Check ~/.hermes/logs/cron.log"
+
+# ─── Notes ─────────────────────────────────────────────────────────────────
+# To test immediately without waiting for schedule:
+#   hermes cron run daily-briefing
+#
+# To view last run output:
+#   hermes cron logs daily-briefing
+#
+# To pause without deleting:
+#   hermes cron pause daily-briefing

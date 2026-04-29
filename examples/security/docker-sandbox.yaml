@@ -1,0 +1,114 @@
+# Hermes Agent — Docker Terminal Backend Configuration
+# Paste the `terminal:` block into your ~/.hermes/config.yaml or profile config.
+# This replaces the default local-shell backend with a hardened Docker sandbox.
+#
+# Prerequisites:
+#   1. Docker Desktop (macOS/Windows) or Docker Engine (Linux) installed and running
+#   2. Sandbox image built: docker build -f examples/security/Dockerfile.sandbox -t hermes-sandbox:latest .
+#
+# The sandbox destroys itself after each task — state does not persist between
+# agent tool calls unless mounted explicitly via the `mounts` section.
+
+terminal:
+  # Use Docker instead of the host shell.
+  # Mitigates: agent escaping into host filesystem or processes.
+  backend: docker
+
+  # The hardened image to use. Build from examples/security/Dockerfile.sandbox.
+  # Never use a generic image (ubuntu, debian) — it has no hardening baked in.
+  image: hermes-sandbox:latest
+
+  # Hard wall-clock timeout per terminal tool call (seconds).
+  # If the command has not exited by this time, the container is killed.
+  # Mitigates: runaway scripts consuming host resources indefinitely.
+  timeout: 180
+
+  # Network mode for the sandbox container.
+  # "restricted" = custom Docker network with allowlist-based outbound egress.
+  # "none"       = fully air-gapped (agent code cannot reach the internet at all).
+  # "host"       = NOT recommended; bypasses all network isolation.
+  network: restricted
+
+  # Outbound allowlist — only relevant when network: restricted.
+  # All other outbound TCP connections are dropped by the Docker network driver.
+  # Mitigates: data exfiltration and C2 beaconing from agent-executed code.
+  allowed_hosts:
+    - "api.github.com"           # GitHub REST and GraphQL API
+    - "github.com"               # git clone / push over HTTPS
+    - "registry.npmjs.org"       # npm package installs
+    - "pypi.org"                 # pip package installs
+    - "files.pythonhosted.org"   # pip wheel downloads
+    - "deb.debian.org"           # apt package installs (Debian-based image)
+    - "security.debian.org"      # apt security updates
+    - "dl.google.com"            # Google SDK downloads (if needed)
+    # Add your internal GitLab / Artifactory / Nexus hosts here if required:
+    # - "gitlab.internal"
+    # - "nexus.internal:8081"
+
+  # Volume mounts inside the container.
+  # Format: { source: <host path>, target: <container path>, readonly: bool }
+  # Mitigates: agent modifying host files outside the designated workspace.
+  mounts:
+    # Read-write: the active project workspace. Agent can edit files here.
+    - source: "${HERMES_WORKDIR:-./workspace}"
+      target: /workspace
+      readonly: false
+
+    # Read-only: Hermes skills directory. Agent can read skills but not modify them.
+    - source: "~/.hermes/skills"
+      target: /hermes-skills
+      readonly: true
+
+    # Read-only: Hermes memories. Agent reads context but cannot overwrite from inside sandbox.
+    # Memory writes go through the Hermes runtime on the host, not the sandbox.
+    - source: "~/.hermes/memories"
+      target: /hermes-memories
+      readonly: true
+
+    # Do NOT mount ~/.hermes/.env or ~/.hermes/auth.json — credentials must
+    # never be accessible from inside the sandbox.
+
+  # Environment variables to pass from host into the sandbox.
+  # Default: empty. Only add variables that agent-run code genuinely needs.
+  # Mitigates: leaking host environment (API keys, tokens) into sandbox.
+  env_passthrough: []
+  # Example — only if your code actually needs these:
+  # env_passthrough:
+  #   - "npm_config_cache"
+  #   - "PYTHONDONTWRITEBYTECODE"
+
+  # Destroy the container after each tool call completes.
+  # Prevents state accumulation across unrelated agent tool calls.
+  # Mitigates: a compromised earlier task affecting a later task in the same session.
+  auto_remove: true
+
+  # Container memory limit. Prevents a single agent task from OOM-killing the host.
+  # Adjust based on your machine's available RAM.
+  memory_limit: "2g"
+
+  # CPU quota: 100000 = 1 full CPU core (100ms per 100ms period).
+  # Prevents agent code from saturating all host CPUs.
+  cpu_quota: 100000
+
+  # Drop all Linux capabilities. The agent runs as a non-root user (UID 1000)
+  # with no capabilities. Combined with no_new_privileges, this prevents
+  # privilege escalation even if a container escape bug is found.
+  cap_drop:
+    - ALL
+
+  # Prevent setuid/setgid binaries from gaining elevated privileges.
+  no_new_privileges: true
+
+  # Read-only root filesystem — only mounted volumes are writable.
+  # Mitigates: container escape via writable rootfs exploitation.
+  read_only_root: true
+
+  # Writable tmpfs mounts (required for many tools to write temp files).
+  tmpfs:
+    - /tmp:size=256m,noexec
+    - /run:size=64m,noexec
+
+  # Security options passed directly to Docker.
+  security_opt:
+    - "no-new-privileges:true"
+    - "seccomp=unconfined"       # Replace with a custom seccomp profile in production

@@ -1,114 +1,174 @@
 #!/bin/bash
 
-# Ollama Model Management Script
-# This script helps manage local Ollama models: listing, pulling, and pruning.
+# Ollama model management utility
+# Supports listing, pulling, updating, removing, and pruning local models.
+
+set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-function show_help() {
-    echo "Usage: $0 [command]"
-    echo ""
-    echo "Commands:"
-    echo "  list      List all installed models"
-    echo "  pull      Pull/Update a specific model"
-    echo "  update    Update all currently installed models"
-    echo "  remove    Remove a specific model"
-    echo "  prune     Interactively remove models"
-    echo "  help      Show this help message"
+RECOMMENDED_MODELS=(
+  "qwen32b-64k:latest"
+  "qwen2.5-coder:32b"
+)
+
+info()  { echo -e "${BLUE}[INFO]${NC} $*"; }
+ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
+fail()  { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
+
+show_help() {
+  echo "Usage: $0 <command> [args]"
+  echo ""
+  echo "Commands:"
+  echo "  list                      List installed models"
+  echo "  pull [model]              Pull/update a model (prompt if missing)"
+  echo "  recommended               Pull recommended agentic models"
+  echo "  update                    Update all currently installed models"
+  echo "  remove [model]            Remove a model (prompt if missing)"
+  echo "  prune                     Interactively remove models"
+  echo "  help                      Show this help message"
 }
 
-function check_ollama() {
-    if ! command -v ollama &> /dev/null; then
-        echo -e "${RED}Error: Ollama is not installed or not in PATH.${NC}"
-        exit 1
-    fi
+check_ollama() {
+  if ! command -v ollama >/dev/null 2>&1; then
+    fail "Ollama is not installed or not in PATH."
+  fi
 }
 
-function list_models() {
-    echo -e "${GREEN}Installed Ollama Models:${NC}"
-    ollama list
+installed_models() {
+  ollama list | awk 'NR>1 && NF>0 {print $1}'
 }
 
-function pull_model() {
-    if [ -z "$1" ]; then
-        read -p "Enter model name to pull: " model_name
-    else
-        model_name=$1
-    fi
-    
-    if [ -n "$model_name" ]; then
-        echo -e "${YELLOW}Pulling model: $model_name...${NC}"
-        ollama pull "$model_name"
-    else
-        echo -e "${RED}No model name provided.${NC}"
-    fi
+list_models() {
+  info "Installed Ollama models:"
+  ollama list
 }
 
-function update_all_models() {
-    echo -e "${YELLOW}Updating all installed models...${NC}"
-    models=$(ollama list | awk 'NR>1 {print $1}')
-    for model in $models; do
-        echo -e "${YELLOW}Updating $model...${NC}"
-        ollama pull "$model"
-    done
-    echo -e "${GREEN}All models updated.${NC}"
+pull_model() {
+  local model_name="${1:-}"
+  if [[ -z "${model_name}" ]]; then
+    read -rp "Enter model name to pull: " model_name
+  fi
+
+  [[ -n "${model_name}" ]] || fail "No model name provided."
+
+  if [[ "${model_name}" == "hermes3" ]]; then
+    warn "'hermes3' is not recommended for agentic tool-calling workflows."
+    warn "Consider: qwen32b-64k:latest or qwen2.5-coder:32b"
+  fi
+
+  info "Pulling model: ${model_name}"
+  ollama pull "${model_name}"
+  ok "Pulled ${model_name}"
 }
 
-function remove_model() {
-    if [ -z "$1" ]; then
-        read -p "Enter model name to remove: " model_name
-    else
-        model_name=$1
-    fi
-    
-    if [ -n "$model_name" ]; then
-        echo -e "${RED}Removing model: $model_name...${NC}"
-        ollama rm "$model_name"
-    else
-        echo -e "${RED}No model name provided.${NC}"
-    fi
+pull_recommended_models() {
+  info "Pulling recommended local models for Hermes Agent..."
+  local model
+  for model in "${RECOMMENDED_MODELS[@]}"; do
+    info "Pulling ${model}"
+    ollama pull "${model}"
+  done
+  ok "Recommended models pulled."
 }
 
-function prune_models() {
-    echo -e "${YELLOW}Pruning models (Interactive)...${NC}"
-    models=$(ollama list | awk 'NR>1 {print $1}')
-    for model in $models; do
-        read -p "Keep $model? [Y/n]: " choice
-        case "$choice" in 
-          n|N ) 
-            echo -e "${RED}Removing $model...${NC}"
-            ollama rm "$model"
-            ;;
-          * ) 
-            echo -e "${GREEN}Keeping $model.${NC}"
-            ;;
-        esac
-    done
+update_all_models() {
+  local models
+  models="$(installed_models)"
+
+  if [[ -z "${models}" ]]; then
+    warn "No installed models found to update."
+    return 0
+  fi
+
+  info "Updating all installed models..."
+  local model
+  while IFS= read -r model; do
+    [[ -n "${model}" ]] || continue
+    info "Updating ${model}"
+    ollama pull "${model}"
+  done <<< "${models}"
+  ok "All installed models updated."
 }
 
-# Main execution
-check_ollama
+remove_model() {
+  local model_name="${1:-}"
+  if [[ -z "${model_name}" ]]; then
+    read -rp "Enter model name to remove: " model_name
+  fi
 
-case "$1" in
+  [[ -n "${model_name}" ]] || fail "No model name provided."
+  warn "Removing model: ${model_name}"
+  ollama rm "${model_name}"
+  ok "Removed ${model_name}"
+}
+
+prune_models() {
+  local models
+  models="$(installed_models)"
+
+  if [[ -z "${models}" ]]; then
+    warn "No installed models found to prune."
+    return 0
+  fi
+
+  info "Pruning models (interactive)..."
+  local model choice
+  while IFS= read -r model; do
+    [[ -n "${model}" ]] || continue
+    read -rp "Keep ${model}? [Y/n]: " choice
+    case "${choice}" in
+      n|N)
+        warn "Removing ${model}"
+        ollama rm "${model}"
+        ;;
+      *)
+        ok "Keeping ${model}"
+        ;;
+    esac
+  done <<< "${models}"
+}
+
+main() {
+  local cmd="${1:-help}"
+
+  case "${cmd}" in
     list)
-        list_models
-        ;;
+      check_ollama
+      list_models
+      ;;
     pull)
-        pull_model "$2"
-        ;;
+      check_ollama
+      pull_model "${2:-}"
+      ;;
+    recommended)
+      check_ollama
+      pull_recommended_models
+      ;;
     update)
-        update_all_models
-        ;;
+      check_ollama
+      update_all_models
+      ;;
     remove)
-        remove_model "$2"
-        ;;
+      check_ollama
+      remove_model "${2:-}"
+      ;;
     prune)
-        prune_models
-        ;;
-    help|*)
-        show_help
-        ;;
-esac
+      check_ollama
+      prune_models
+      ;;
+    help)
+      show_help
+      ;;
+    *)
+      fail "Unknown command: ${cmd}. Run '$0 help' for usage."
+      ;;
+  esac
+}
+
+main "$@"

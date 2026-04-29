@@ -1,0 +1,141 @@
+# Hermes Agent — Security Baseline Configuration
+# Drop this section into your ~/.hermes/config.yaml (or a profile's config.yaml).
+# Every field is annotated with the threat it mitigates.
+
+security:
+  # ─── Dangerous Command Gate ────────────────────────────────────────────────
+  # Before executing ANY shell command that matches the patterns below, Hermes
+  # suspends execution, shows the exact command to the user, and requires
+  # explicit yes/no approval. The gate is enforced at the executor layer —
+  # not in the prompt — so prompt injection cannot bypass it.
+  dangerous_command_approval: true
+
+  # Patterns that always require approval (regex, case-insensitive).
+  # Mitigates: accidental or injected destructive commands.
+  dangerous_patterns:
+    - "rm\\s+-rf"                     # recursive force delete
+    - "dd\\s+if="                     # raw disk write
+    - "chmod\\s+-R\\s+777"            # world-writable permission sprawl
+    - "mkfs\\."                       # filesystem format
+    - ">\\s*/dev/"                    # write to device node
+    - "curl.*\\|\\s*(ba)?sh"          # remote code execution via pipe
+    - "wget.*\\|\\s*(ba)?sh"          # remote code execution via pipe
+    - "sudo\\s+visudo"                # sudoers edit
+    - "sudo\\s+passwd"                # root password change
+    - "shutdown|reboot|halt|poweroff" # system state changes
+    - "iptables\\s+-F"                # flush firewall rules
+    - "pkill|killall\\s+-9"           # mass process kill
+    - "truncate\\s+--size=0"          # file truncation
+    - "git\\s+push\\s+.*--force"      # force push (can destroy remote history)
+    - "DROP\\s+TABLE|DROP\\s+DATABASE" # destructive SQL
+
+  # ─── Context File Scanning ─────────────────────────────────────────────────
+  # Scans all user-provided files, pasted content, URL fetches, and tool
+  # output before injecting into the agent's context window.
+  # Mitigates: prompt injection attacks embedded in external content.
+  context_scan_enabled: true
+
+  context_scan:
+    # Prompt injection keyword patterns (regex).
+    injection_patterns:
+      - "ignore (all )?previous instructions"
+      - "your new (system )?prompt is"
+      - "disregard (your |all )?safety"
+      - "act as (a different|an unrestricted)"
+      - "forget everything (above|before)"
+      - "new persona:"
+      - "DAN mode"
+    # Zero-width / invisible character detection.
+    # Mitigates: steganographic payload hiding.
+    detect_invisible_chars: true
+    # Unicode bidirectional override detection.
+    # Mitigates: text displayed differently from what is executed.
+    detect_bidi_overrides: true
+    # Maximum input length before truncation (chars).
+    # Mitigates: context flooding / token exhaustion attacks.
+    max_input_length: 200000
+
+  # ─── Prompt Injection Detection ────────────────────────────────────────────
+  # Secondary ML-based classifier that scores injected context for adversarial
+  # intent. Raises alert (and optionally halts) on high-confidence detections.
+  # Mitigates: sophisticated injections that bypass regex patterns above.
+  prompt_injection_detection: true
+
+  prompt_injection:
+    sensitivity: medium          # low | medium | high
+    action: warn                 # warn | block
+    log_detections: true
+
+  # ─── Credential Scan ───────────────────────────────────────────────────────
+  # Prevents the agent from reading credential files directly or exfiltrating
+  # their contents via tool calls (curl, wget, nc, python requests, etc.).
+  # Mitigates: credential theft via rogue tool calls.
+  credential_scan: true
+
+  credential_scan:
+    # File paths that are never readable by agent tool calls.
+    blocked_paths:
+      - "~/.hermes/.env"
+      - "~/.hermes/auth.json"
+      - "~/.ssh/id_rsa"
+      - "~/.ssh/id_ed25519"
+      - "~/.aws/credentials"
+      - "~/.config/gcloud/application_default_credentials.json"
+      - "/etc/shadow"
+      - "/etc/passwd"
+    # Patterns in tool output that indicate credential exfiltration attempts.
+    # Mitigates: agent sending API keys to external hosts.
+    exfiltration_patterns:
+      - "Authorization: Bearer"
+      - "api[_-]?key"
+      - "secret[_-]?key"
+      - "ANTHROPIC_API_KEY"
+      - "OPENAI_API_KEY"
+      - "-----BEGIN (RSA|EC|OPENSSH) PRIVATE KEY-----"
+
+  # ─── Network Policy ────────────────────────────────────────────────────────
+  # When using the Docker backend, restricts which hosts agent-executed
+  # processes may connect to. All other outbound is blocked.
+  # Mitigates: data exfiltration and C2 beaconing from agent-run code.
+  network_policy:
+    mode: allowlist              # allowlist | denylist | none
+    allowed_hosts:
+      - "api.github.com"
+      - "registry.npmjs.org"
+      - "pypi.org"
+      - "files.pythonhosted.org"
+      - "dl-cdn.alpinelinux.org"
+      - "deb.debian.org"
+      - "security.debian.org"
+    # Local/internal ranges are blocked by default (prevent SSRF).
+    block_private_ranges: true
+
+  # ─── Tool Execution Limits ─────────────────────────────────────────────────
+  # Hard timeout per individual tool call (seconds).
+  # Mitigates: runaway processes, DoS via infinite loops in agent-run scripts.
+  tool_timeout: 30
+
+  # Maximum characters captured from a single tool call's stdout+stderr.
+  # Excess is truncated. Mitigates: context flooding from verbose tool output.
+  max_output_size: 50000
+
+  # ─── Session Storage ───────────────────────────────────────────────────────
+  # SQLite (state.db) is NOT encrypted at rest by default.
+  # Sessions may contain sensitive context injected from memory or user input.
+  # Recommendation: store ~/.hermes on an encrypted filesystem (FileVault on
+  # macOS, LUKS on Linux) rather than relying on application-layer encryption.
+  session_encryption: false
+  # If true, hermes will attempt to use SQLite's SEE (commercial) or
+  # sqlcipher for at-rest encryption. Requires a compatible SQLite build.
+  # session_encryption_key: "${HERMES_DB_KEY}"
+
+  # ─── Audit ─────────────────────────────────────────────────────────────────
+  # Log all tool calls (inputs and outputs) to ~/.hermes/logs/agent.log.
+  # Mitigates: inability to review what the agent actually did post-incident.
+  audit_logging: true
+
+  audit:
+    log_tool_inputs: true
+    log_tool_outputs: true       # be aware: outputs may contain sensitive data
+    log_model_responses: false   # set true only for deep debugging
+    retention_days: 90

@@ -213,6 +213,18 @@ Check: no bare except clauses, no mutable default args, no pickle.loads on untru
 
 ---
 
+## Success Criteria
+
+The review is complete only when:
+
+- PR metadata, changed files, diff scope, and CI status were fetched or the unavailable data was called out.
+- The review applied project instructions from `AGENTS.md`, `.cursorrules`, or memory when available.
+- Findings include specific file and line references when the diff provides them.
+- Security, tests, dependencies, docs impact, and breaking-change risk were considered.
+- The final verdict is explicit and delivery happened through the configured channel.
+
+---
+
 ## Memory Integration
 
 After each run, optionally update MEMORY.md:

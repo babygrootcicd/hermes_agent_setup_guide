@@ -1,30 +1,49 @@
 # Hermes Agent Configuration Template
-# Rename this file to config.yaml and update the values.
+# Copy to ~/.hermes/config.yaml and adjust as needed.
+# Or run: hermes model
 
-# General Settings
+model:
+  provider: ""         # e.g. auto | gemini | copilot | anthropic | openrouter
+  default: ""          # e.g. gemini-2.5-flash | gpt-4o | claude-sonnet-4-5
+  context_length: 65536
+  # base_url: http://localhost:11434/v1
+  # api_key: ollama
+
+terminal:
+  backend: local       # local | docker | modal
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
 agent:
-  name: "MyHermesAgent"
-  description: "A local assistant powered by Ollama"
+  max_turns: 20
 
-# LLM Provider Settings (Ollama)
-provider:
-  type: "ollama"
-  baseUrl: "http://host.docker.internal:11434" # Default for Docker accessing host
-  model: "llama3"
+toolsets:
+  enabled:
+    - terminal
+    - skills
+    - memory
+  disabled:
+    - browser_automation
+    - code_execution
 
-# Gateway Settings
 gateways:
   telegram:
     enabled: false
-    token: "YOUR_TELEGRAM_BOT_TOKEN_HERE"
+    token: "${TELEGRAM_BOT_TOKEN}"
   discord:
     enabled: false
-    token: "YOUR_DISCORD_BOT_TOKEN_HERE"
+    token: "${DISCORD_BOT_TOKEN}"
   slack:
     enabled: false
-    token: "YOUR_SLACK_BOT_TOKEN_HERE"
+    token: "${SLACK_BOT_TOKEN}"
 
-# Storage Settings
 storage:
-  type: "local"
-  path: "./data"
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2

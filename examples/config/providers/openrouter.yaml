@@ -1,0 +1,101 @@
+# Hermes Agent — Provider Config: OpenRouter
+#
+# OpenRouter provides access to 200+ models from a single API key and billing account.
+# Useful when you want model diversity without managing separate accounts per provider.
+#
+# Setup:
+#   1. Create account at https://openrouter.ai
+#   2. Generate API key: https://openrouter.ai/keys
+#   3. Add to ~/.hermes/.env:  OPENROUTER_API_KEY=sk-or-...
+#   4. Optionally add credits or use free-tier models
+#
+# Free models available on OpenRouter (no credits needed, rate-limited):
+#   - google/gemini-2.0-flash-exp:free
+#   - meta-llama/llama-3.1-8b-instruct:free
+#   - mistralai/mistral-7b-instruct:free
+#   See full list: https://openrouter.ai/models?q=free
+#
+# Pricing: pay-per-token per model; no monthly subscription required.
+# Check model pricing at: https://openrouter.ai/models
+
+agent:
+  name: "HermesOpenRouter"
+  description: "Hermes Agent via OpenRouter multi-model gateway"
+  max_turns: 20
+
+model:
+  provider: openrouter
+  api_key: "${OPENROUTER_API_KEY}"    # set in ~/.hermes/.env
+
+  # Required by OpenRouter for model ranking and usage attribution.
+  # Replace with your actual site/app info.
+  site_url: "https://github.com/nousresearch/hermes-agent"
+  app_name: "Hermes Agent"
+
+  # --- Model options (uncomment one) ---
+  # Format: "provider/model-name"
+  #
+  # Fast & capable (recommended for everyday agent use):
+  # google/gemini-2.5-flash          → fast, free tier available
+  # openai/gpt-4o-mini               → cheap, good tool calling
+  # anthropic/claude-haiku-4-5       → fast Claude model
+  #
+  # High capability:
+  # anthropic/claude-sonnet-4-6      → strong reasoning and code
+  # openai/gpt-4o                    → reliable tool calling; 128K context
+  # google/gemini-2.5-pro            → long context, complex tasks
+  #
+  # Reasoning / research:
+  # deepseek/deepseek-r1             → strong reasoning; moderate speed
+  # openai/o3-mini                   → reasoning model; best for multi-step logic
+  #
+  # Free tier (rate-limited, no credits needed):
+  # google/gemini-2.0-flash-exp:free
+  # meta-llama/llama-3.1-8b-instruct:free
+  default: google/gemini-2.5-flash
+
+  # Context length varies by model. Common values:
+  # gemini-2.5-flash: 1,000,000 tokens (set lower for agent stability)
+  # gpt-4o:           128,000 tokens
+  # claude-sonnet:    200,000 tokens
+  # deepseek-r1:      64,000 tokens
+  context_length: 32768   # safe agent default regardless of model maximum
+
+terminal:
+  backend: local
+  timeout: 180
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+
+toolsets:
+  enabled:
+    - terminal
+    - web
+    - skills
+    - memory
+  disabled:
+    - browser_automation
+    - home_assistant
+
+gateways:
+  telegram:
+    enabled: false
+    token: "${TELEGRAM_BOT_TOKEN}"
+  discord:
+    enabled: false
+    token: "${DISCORD_BOT_TOKEN}"
+
+storage:
+  type: local
+  path: ~/.hermes
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 2
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true

@@ -1,0 +1,99 @@
+version: "3.9"
+
+# Hermes Agent — Hardened Sandbox Docker Compose
+#
+# This file defines an isolated execution environment for Hermes Agent tool calls.
+# It is NOT the main Hermes process — it defines the *sandbox* container that
+# the Hermes terminal backend spins up to run agent-issued shell commands.
+#
+# Usage:
+#   Build the sandbox image:
+#     docker compose -f examples/security/docker-compose.sandbox.yml build
+#
+#   Hermes will launch individual containers from this image automatically
+#   when `terminal.backend: docker` is set in config.yaml.
+#
+#   To test the sandbox interactively:
+#     docker compose -f examples/security/docker-compose.sandbox.yml run --rm hermes-sandbox bash
+
+services:
+  hermes-sandbox:
+    build:
+      context: ../..                        # repo root
+      dockerfile: examples/security/Dockerfile.sandbox
+    image: hermes-sandbox:latest
+    container_name: hermes-sandbox-run     # overridden per-invocation by Hermes runtime
+
+    # ── Volumes ───────────────────────────────────────────────────────────────
+    volumes:
+      # Project workspace: read-write so agent can create/edit files.
+      # Replace with your actual project directory.
+      - type: bind
+        source: ../../workspace
+        target: /workspace
+        read_only: false
+
+      # Temporary scratch space. Destroyed with the container.
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 268435456    # 256 MiB
+          mode: 0o1777
+
+    # ── Network ───────────────────────────────────────────────────────────────
+    networks:
+      sandbox-net:
+        # No aliases — container should not be discoverable by name on this network.
+
+    # ── Environment ───────────────────────────────────────────────────────────
+    # Minimal environment: no host env vars, no API keys, no tokens.
+    # Add only what agent-run code genuinely needs.
+    environment:
+      TERM: dumb
+      HOME: /home/hermes
+      PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      # Do NOT add: ANTHROPIC_API_KEY, OPENAI_API_KEY, TELEGRAM_BOT_TOKEN, etc.
+
+    # ── Resource Limits ───────────────────────────────────────────────────────
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"          # max 1 CPU core
+          memory: 2G           # max 2 GiB RAM
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+    # ── Security ──────────────────────────────────────────────────────────────
+    cap_drop:
+      - ALL                    # drop every Linux capability
+    cap_add: []                # add none back
+    security_opt:
+      - no-new-privileges:true
+    read_only: true            # root filesystem is read-only; only /workspace and /tmp are writable
+    user: "1000:1000"          # run as non-root hermes user (UID/GID 1000)
+
+    # ── Lifecycle ─────────────────────────────────────────────────────────────
+    # Never restart automatically — each agent task gets a fresh container.
+    restart: "no"
+
+    # Kill container if it has not produced output for 3 minutes.
+    # Prevents zombie containers from blocking the agent task queue.
+    stop_grace_period: "10s"
+
+    stdin_open: true
+    tty: false                 # no TTY in automated mode; set true only for interactive debug
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  sandbox-net:
+    driver: bridge
+    internal: true             # no routing to the host network or internet
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"   # disable inter-container comms
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    ipam:
+      config:
+        - subnet: "172.30.0.0/24"

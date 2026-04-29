@@ -1,0 +1,7 @@
+Phase 02 — Persistent Memory Templates: COMPLETE
+
+Files created:
+- examples/memory/MEMORY.md          — generic starter template with 8 annotated sections and capacity guidance
+- examples/memory/USER.md            — generic starter template with 7 annotated sections and capacity guidance
+- examples/memory/MEMORY-devsecops.md — filled example: 1645 chars (limit 2200); macOS+Docker env, 2 projects, GitLab infra, 3 completed items, quirks, corrections, pitfalls
+- examples/memory/USER-devsecops.md  — filled example: 1001 chars (limit 1375); Dennis/DevSecOps/UTC+8, Traditional Chinese, Go+Linux expert, repo-style deliverables, Telegram delivery

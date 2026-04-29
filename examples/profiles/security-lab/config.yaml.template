@@ -1,0 +1,40 @@
+model:
+  provider: custom
+  default: qwen2.5-coder:14b
+  base_url: http://localhost:11434/v1
+  api_key: ollama
+  context_length: 32768
+
+toolsets:
+  enabled:
+    - terminal
+    - web
+    - skills
+    - cron
+    - memory
+  disabled:
+    - google_workspace
+    - home_assistant
+    - browser_automation
+    - messaging_send
+
+terminal:
+  backend: docker
+  timeout: 300
+  network: restricted
+  allowed_hosts:
+    - gitlab.internal
+    - grafana.internal
+    - prometheus.internal
+
+security:
+  dangerous_command_approval: true
+  context_scan_enabled: true
+  prompt_injection_detection: true
+
+agent:
+  max_turns: 20
+
+delegation:
+  max_concurrent_children: 1
+  max_spawn_depth: 1

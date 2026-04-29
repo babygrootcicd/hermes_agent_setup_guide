@@ -1,0 +1,20 @@
+phase: 06
+status: complete
+worker: Codex App Resume 06-10
+completed_at: 2026-04-29
+ownership:
+  - scripts/common/scaffold-hermes-dir.sh
+  - scripts/common/backup.sh
+  - scripts/common/export-sessions.sh
+  - examples/config/config.yaml.template
+  - examples/config/.env.template
+  - .agent-progress/phase-06.done
+summary:
+  - Landed safer and more ergonomic Hermes scaffolding with strict permissions, template copy flow, state DB bootstrap, and idempotent helpers.
+  - Expanded backup/export tooling with stronger path handling, redaction-aware flows, additional filters, and clearer operator UX.
+  - Updated config templates to safer defaults and clearer provider/model/delegation guidance.
+evidence:
+  - Commit f5769b41da81890ea616615ea9bdcf2b597f040b modifies all owned phase-06 files.
+validation:
+  - bash -n scripts/common/scaffold-hermes-dir.sh scripts/common/backup.sh scripts/common/export-sessions.sh
+  - ruby -e 'require "yaml"; YAML.load_file("examples/config/config.yaml.template")'

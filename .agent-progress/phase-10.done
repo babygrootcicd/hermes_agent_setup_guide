@@ -1,0 +1,20 @@
+phase: 10
+status: complete
+worker: Codex App Resume 06-10
+completed_at: 2026-04-29
+ownership:
+  - scripts/common/verify.sh
+  - scripts/common/verify.ps1
+  - scripts/macos/debug.sh
+  - docker-compose.yml
+  - Dockerfile
+  - .agent-progress/phase-10.done
+summary:
+  - Expanded verification scripts with stronger install/session/security/connectivity checks and clearer reporting.
+  - Improved macOS debug workflow output and diagnostics guidance.
+  - Existing Docker artifacts were reviewed and kept unchanged for this phase.
+evidence:
+  - Commit f5769b41da81890ea616615ea9bdcf2b597f040b modifies scripts/common/verify.sh, scripts/common/verify.ps1, and scripts/macos/debug.sh.
+  - docker-compose.yml and Dockerfile required no additional edits for phase acceptance.
+validation:
+  - bash -n scripts/common/verify.sh scripts/macos/debug.sh
