@@ -3,6 +3,16 @@
 # Dependencies
 node_modules/
 
+# claude
+.claude
+.claude/
+.claude/cache/
+.claude/history/
+.claude/logs/
+.claude/sessions/
+.claude/state.db
+.claude/sessions/
+
 # Environment variables
 .env
 *.env
