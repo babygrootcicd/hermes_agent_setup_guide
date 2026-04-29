@@ -94,3 +94,8 @@ Section contracts:
   - `✅ Clean`
   - `⚠️ Issues Found`
   - `🚨 Critical Action Required`
+
+Pre-flight validation before returning:
+- All required headers must appear exactly once and in order.
+- Any empty section must contain an explicit sentinel (`- None` or `No ... found.`).
+- Step 3 must never include medium/low severities.

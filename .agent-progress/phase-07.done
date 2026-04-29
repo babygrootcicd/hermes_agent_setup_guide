@@ -1,0 +1,17 @@
+phase: 07
+status: complete
+worker: Worker Phase 07
+completed_at: 2026-04-29
+ownership:
+  - examples/cron/prompts/**
+  - examples/task-templates/**
+  - scripts/common/gather_context.sh
+  - .agent-progress/phase-07.done
+summary:
+  - Added explicit output contracts to everyday cron prompts (daily briefing, disk monitor, nightly DevSecOps, weekly study review).
+  - Updated the feature implementation task template with a deterministic task/output contract, acceptance criteria, and final response skeleton.
+  - Hardened gather_context.sh for deterministic ordering and machine-checkable context metadata (size/hash + bundle summary).
+validation:
+  - bash -n scripts/common/gather_context.sh
+  - Verified each owned prompt/template includes "OUTPUT CONTRACT (REQUIRED)".
+  - Confirmed no edits to docs/charactistics/progress.md.

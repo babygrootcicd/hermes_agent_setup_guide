@@ -56,3 +56,23 @@ Final response must include all sections below in order.
 - Output Contract is fully satisfied.
 - Verification commands are included with outcomes.
 - No edits outside declared ownership.
+
+## Final Response Skeleton
+Use this exact section order in the final delivery:
+
+```md
+## Status
+<complete|partial|blocked> — <one-sentence rationale>
+
+## Changed Files
+- <path> — <change summary>
+
+## Implementation Details
+<brief implementation notes + assumptions>
+
+## Verification Done
+- `<command>` — pass|fail
+
+## Risks
+<risk list or `none`>
+```

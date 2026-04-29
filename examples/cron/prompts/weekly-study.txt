@@ -103,3 +103,8 @@ Language/style constraints:
 
 Final line contract:
 - `Week <N> of <M> — <X>% of domains at ≥80% — <D> days to exam target`
+
+Pre-flight validation before returning:
+- Section headers must appear exactly once and in order.
+- Section 4 must contain 3-5 numbered items only.
+- `Status` in Section 1 must match the Accuracy % thresholds.

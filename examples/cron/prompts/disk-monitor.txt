@@ -108,3 +108,8 @@ Mode B — Alert state (if any path >= threshold OR retention anomaly):
 - `## Execution Timestamp`:
   - Exactly one line:
     - `<timestamp ISO-8601 UTC>`
+
+Pre-flight validation before returning:
+- If mode is Healthy, ensure output has exactly one line.
+- If mode is Alert, ensure all 7 required sections are present.
+- Keep total message under 3,000 characters.

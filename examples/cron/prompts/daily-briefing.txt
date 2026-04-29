@@ -72,3 +72,8 @@ OUTPUT CONTRACT (REQUIRED):
    - No topic may exceed 3 items.
    - Every non-empty item must include a valid `Source` URL.
    - No prose outside the required sections.
+
+Pre-flight validation before returning:
+- Verify exactly 6 headings exist (H1 + five H2).
+- Verify every `Date` field is `YYYY-MM-DD`.
+- Verify all summaries are Traditional Chinese and <=2 sentences.
