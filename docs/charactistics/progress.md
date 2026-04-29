@@ -33,6 +33,8 @@
 - `21:57:00` Phase 07 and Phase 08 markers written (`.agent-progress/phase-07.done`, `.agent-progress/phase-08.done`).
 - `21:59:07` Consolidated implementation commit landed: `f5769b4` (phase 06/09/10 owned files).
 - `21:59:54` Wrote missing phase markers (`phase-06.done`, `phase-09.done`, `phase-10.done`) and refreshed this tracker.
+- `22:04:08` Monitor checkpoint commit created: `5492cb7` (`checkpoint:`) while tracking incoming worker changes.
+- `22:05:08` Monitor observed a full 60s idle window with no new non-monitor file changes and stopped.
 
 ## Pending Next TODO
 
