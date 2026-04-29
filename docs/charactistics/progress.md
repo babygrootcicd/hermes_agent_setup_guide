@@ -1,8 +1,8 @@
 # Hermes Agent Implementation Progress
 
 **Started:** Wed Apr 29 20:43:15 CST 2026
-**Last updated:** 2026-04-29 21:54:45 CST
-**Progress:** 6/11 phases complete
+**Last updated:** 2026-04-29 21:59:54 CST
+**Progress:** 11/11 phases complete
 
 ## Phase Status
 
@@ -14,11 +14,11 @@
 | 03 | Skills templates and criteria | ✅ Complete | `.agent-progress/phase-03.done`; `examples/skills/README.md` + skill `SKILL.md` files modified in `git status` |
 | 04 | Gateway + cron validation/fixes | ✅ Complete | `.agent-progress/phase-04.done`; `examples/cron/weekly-study-review.yaml` + `scripts/macos/setup-gateway.sh` modified in `git status` |
 | 05 | Provider config templates | ✅ Complete | `.agent-progress/phase-05.done`; provider template files present under `examples/config/providers/` |
-| 06 | Unreported | ⏳ Pending | No `.agent-progress/phase-06.done` marker |
-| 07 | Unreported | ⏳ Pending | No `.agent-progress/phase-07.done` marker |
-| 08 | Unreported | ⏳ Pending | No `.agent-progress/phase-08.done` marker |
-| 09 | Unreported | ⏳ Pending | No `.agent-progress/phase-09.done` marker |
-| 10 | Unreported | ⏳ Pending | No `.agent-progress/phase-10.done` marker |
+| 06 | Storage scaffolding + backup/export tooling + config template hardening | ✅ Complete | `.agent-progress/phase-06.done`; owned files landed in commit `f5769b4` |
+| 07 | Everyday prompts + task templates + context gatherer hardening | ✅ Complete | `.agent-progress/phase-07.done`; marker timestamp `2026-04-29 21:57` |
+| 08 | Profile templates (`examples/profiles/**`) | ✅ Complete | `.agent-progress/phase-08.done`; marker timestamp `2026-04-29 21:57` |
+| 09 | Provider/setup automation and model maintenance scripts | ✅ Complete | `.agent-progress/phase-09.done`; owned files landed in commit `f5769b4` |
+| 10 | Verification/debug scripts and final operational checks | ✅ Complete | `.agent-progress/phase-10.done`; verify/debug updates in commit `f5769b4` |
 
 ## Activity Log
 
@@ -30,7 +30,10 @@
 - `20:52:37` Phase 01 marker written (`.agent-progress/phase-01.done`).
 - `20:53:10` Phase 04 marker written (`.agent-progress/phase-04.done`).
 - `21:54:45` Synced table against `.agent-progress/*.done` and current `git status --short`.
+- `21:57:00` Phase 07 and Phase 08 markers written (`.agent-progress/phase-07.done`, `.agent-progress/phase-08.done`).
+- `21:59:07` Consolidated implementation commit landed: `f5769b4` (phase 06/09/10 owned files).
+- `21:59:54` Wrote missing phase markers (`phase-06.done`, `phase-09.done`, `phase-10.done`) and refreshed this tracker.
 
 ## Pending Next TODO
 
-- Complete Phase 06 work, write `.agent-progress/phase-06.done`, then refresh this tracker (status + log) before handoff.
+- All phases complete. Ready for final review, optional squashing/rebase strategy, and publish/push.

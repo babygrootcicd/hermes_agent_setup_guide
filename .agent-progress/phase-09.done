@@ -1,0 +1,18 @@
+phase: 09
+status: complete
+worker: Codex App Resume 06-10
+completed_at: 2026-04-29
+ownership:
+  - scripts/macos/setup-provider-gemini.sh
+  - scripts/automation/update_models.sh
+  - scripts/macos/setup_hermes_ollama.sh
+  - scripts/windows/setup_hermes_ollama.ps1
+  - .agent-progress/phase-09.done
+summary:
+  - Improved provider/setup automation with stricter validation, clearer prompts, and safer defaults.
+  - Reworked model maintenance automation with robust command handling and recommended model workflows.
+  - Tightened macOS/Windows setup script behavior around Ollama/Hermes alignment and operator guidance.
+evidence:
+  - Commit f5769b41da81890ea616615ea9bdcf2b597f040b modifies all owned phase-09 files.
+validation:
+  - bash -n scripts/automation/update_models.sh scripts/macos/setup-provider-gemini.sh scripts/macos/setup_hermes_ollama.sh
