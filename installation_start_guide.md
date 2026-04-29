@@ -375,13 +375,13 @@ Hermes 預設資料路徑：
 Create backup archive:
 
 ```bash
-./scripts/common/backup.sh --mode full --output ~/hermes_backups
+./scripts/common/backup.sh --full --output ~/hermes_backups/hermes-backup-$(date +%F).zip
 ```
 
 Export sessions (example: last 7 days):
 
 ```bash
-./scripts/common/export-sessions.sh --since "7 days ago" --format jsonl --output ~/hermes_exports
+./scripts/common/export-sessions.sh --since "7 days ago" --output ~/hermes_exports/sessions-$(date +%F).jsonl
 ```
 
 Model lifecycle helper:
@@ -397,13 +397,13 @@ Model lifecycle helper:
 建立備份封存：
 
 ```bash
-./scripts/common/backup.sh --mode full --output ~/hermes_backups
+./scripts/common/backup.sh --full --output ~/hermes_backups/hermes-backup-$(date +%F).zip
 ```
 
 匯出 sessions（範例：最近 7 天）：
 
 ```bash
-./scripts/common/export-sessions.sh --since "7 days ago" --format jsonl --output ~/hermes_exports
+./scripts/common/export-sessions.sh --since "7 days ago" --output ~/hermes_exports/sessions-$(date +%F).jsonl
 ```
 
 模型維護工具：
