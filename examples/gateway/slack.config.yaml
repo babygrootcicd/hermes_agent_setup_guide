@@ -1,0 +1,84 @@
+# Slack Gateway Configuration
+# Paste this block into your ~/.hermes/config.yaml under the top-level key `slack:`
+#
+# Prerequisites:
+#   1. Go to https://api.slack.com/apps → Create New App → From Scratch
+#   2. Socket Mode tab → Enable Socket Mode → Generate App-Level Token (scope: connections:write)
+#      Copy as SLACK_APP_TOKEN (starts with xapp-)
+#   3. OAuth & Permissions → Bot Token Scopes: add
+#        channels:history, channels:read, chat:write, groups:history,
+#        groups:read, im:history, im:read, im:write, users:read
+#   4. Install to Workspace → copy Bot User OAuth Token (starts with xoxb-)
+#      Copy as SLACK_BOT_TOKEN
+#   5. Event Subscriptions → Enable Events → Subscribe to bot events:
+#        message.channels, message.groups, message.im
+#   6. Add both tokens to ~/.hermes/.env
+
+slack:
+  # ─── Authentication ───────────────────────────────────────────────────────
+  # Bot User OAuth Token (xoxb-...) — used to post messages and read channels.
+  bot_token: "${SLACK_BOT_TOKEN}"
+
+  # App-Level Token (xapp-...) — required for Socket Mode (no public URL needed).
+  app_token: "${SLACK_APP_TOKEN}"
+
+  # ─── Connection Mode ──────────────────────────────────────────────────────
+  # socket_mode: true uses WebSocket connection — no public HTTPS endpoint required.
+  # This is strongly recommended for local/server deployments without a reverse proxy.
+  socket_mode: true
+
+  # ─── Workspace ────────────────────────────────────────────────────────────
+  # Your Slack workspace ID. Found in: Workspace Settings → scroll to bottom.
+  # Also visible in your Slack URL: https://app.slack.com/client/T01234ABCDE/...
+  workspace_id: "T01234ABCDE"    # replace with your workspace ID
+
+  # ─── Access Control ───────────────────────────────────────────────────────
+  # Channel names (without #) the bot is permitted to respond in.
+  # Leave empty to allow all channels the bot is a member of.
+  allowed_channels:
+    - "hermes-agent"       # dedicated channel for Hermes commands
+    - "devops-alerts"      # receive monitoring outputs here
+    # - "general"          # add carefully — noisy in large workspaces
+
+  # Slack user IDs allowed to interact with the bot.
+  # Find your user ID: click your name in Slack → View full profile → More → Copy member ID
+  # Leave empty to allow all workspace members.
+  allowed_user_ids: []
+    # - "U01234ABCDE"      # add trusted users here
+
+  # ─── Mention Behaviour ────────────────────────────────────────────────────
+  # If true, bot only responds when directly mentioned (@HermesBot) in a channel.
+  # In DMs, mention is not required.
+  mention_required: true
+
+  # ─── Response Formatting ──────────────────────────────────────────────────
+  # Slack uses Block Kit for rich formatting.
+  # When true, structured responses use Block Kit sections, code blocks, dividers.
+  use_block_kit: true
+
+  # Slack message limit: 40,000 chars per message; Block Kit has per-block limits.
+  # Hermes will truncate or split longer content automatically.
+  message_length_limit: 4000
+
+  # ─── Agent Behaviour ──────────────────────────────────────────────────────
+  toolsets:
+    - web
+    - terminal
+    - skills
+    - memory
+    - github
+    # - google_workspace   # uncomment for Gmail/Calendar integration via Slack
+
+  max_turns: 20
+
+  # Seconds before a timeout message is sent.
+  response_timeout: 180
+
+  # ─── Cron Delivery ────────────────────────────────────────────────────────
+  # Default channel for cron job output delivery (without #).
+  default_delivery_channel: "hermes-agent"
+
+  # ─── Typing Indicator ─────────────────────────────────────────────────────
+  # Posts a "thinking..." reaction emoji while processing.
+  show_typing_indicator: true
+  typing_emoji: "thinking_face"
