@@ -541,7 +541,7 @@ Reference existing security examples.
 #### 範例提示詞
 ```text
 請為本 repo 的 Hermes 使用方式建立一份 safe-operations checklist。
-需包含：憑證處理、指令 allow/deny 政策、備份/還原流程、分享 logs 前的去敏（s sanitization）。
+需包含：憑證處理、指令 allow/deny 政策、備份/還原流程、分享 logs 前的去敏（sanitization）。
 請參考 repo 既有 security 範例。
 ```
 
