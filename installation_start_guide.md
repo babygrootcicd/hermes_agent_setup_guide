@@ -13,10 +13,10 @@ This document provides exact, executable steps to initialize, configure, and sta
 - Supported:
   - macOS native
   - Windows with WSL2 (Hermes on native Windows is not supported)
-- Default local model settings used across this guide:
+- Local model profiles:
+  - **fast-local** (active default): model `qwen2.5-coder:7b`, Hermes context override `65536`, Ollama actual ctx `32768`
+  - **default** (quality): model `qwen32b-64k:latest`, context `65536`
   - Ollama URL: `http://127.0.0.1:11434/v1`
-  - Model: `qwen32b-64k:latest`
-  - Context length: `65536`
 - Default first-start launch profile in this guide:
   - `--toolsets terminal,skills`
   - `--max-turns 8` (speed-first smoke test)
@@ -42,11 +42,20 @@ curl -fsS http://127.0.0.1:11434/api/tags
 ```bash
 hermes claw cleanup
 ```
-4. Model appropriate for tool use?
-   - Use `qwen32b-64k:latest` in `hermes model`.
+4. Profile and model appropriate for task?
+   - `fast-local` profile (default): `qwen2.5-coder:7b` — fast, good for routine work.
+   - `default` profile: `qwen32b-64k:latest` — slower, better for complex reasoning.
+   - Check active profile: `cat ~/.hermes/active_profile`
+   - Switch: `hermes profile use fast-local` or `hermes profile use default`
    - Avoid `hermes3` for agentic tool workflows.
-5. Still slow?
-   - Start with only `terminal,skills` toolsets and low `--max-turns`.
+   - Never pass `--model` on CLI — use profiles instead.
+5. Still slow (3+ minute responses)?
+   - Confirm fast-local model: `grep default ~/.hermes/profiles/fast-local/config.yaml` → should show `qwen2.5-coder:7b`
+   - Warm up Ollama first: `ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
+   - Reduce toolsets: start with only `terminal,skills` and low `--max-turns`.
+   - Startup-only timing (for example immediate `/quit`) is not response latency.
+   - Use real-prompt latency benchmark: `./scripts/automation/run_benchmark_round4_response_latency.sh`
+   - Keep only valid benchmark runs in summaries: must include assistant output plus `t_prompt_ready`, `t_first_token`, and `t_completion_done`.
 
 ### 繁體中文
 
@@ -65,11 +74,20 @@ curl -fsS http://127.0.0.1:11434/api/tags
 ```bash
 hermes claw cleanup
 ```
-4. 模型是否適合工具調用？
-   - 在 `hermes model` 使用 `qwen32b-64k:latest`。
+4. Profile 與模型是否符合當前任務？
+   - `fast-local` profile（預設）：`qwen2.5-coder:7b`，快速，適合日常任務。
+   - `default` profile：`qwen32b-64k:latest`，較慢但推理更強。
+   - 確認目前 profile：`cat ~/.hermes/active_profile`
+   - 切換：`hermes profile use fast-local` 或 `hermes profile use default`
    - 避免 `hermes3` 用於 agent 工具流程。
-5. 還是很慢？
-   - 先用最小 toolsets（`terminal,skills`）與較低 `--max-turns` 啟動。
+   - 不要在 CLI 傳 `--model`，改用 profile 管理模型。
+5. 還是很慢（回應超過 3 分鐘）？
+   - 確認 fast-local 模型：`grep default ~/.hermes/profiles/fast-local/config.yaml` → 應顯示 `qwen2.5-coder:7b`
+   - 預熱 Ollama：`ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
+   - 縮小 toolsets：先用 `terminal,skills` 與較低 `--max-turns`。
+   - 只量啟動（例如立刻送 `/quit`）不等於回應延遲。
+   - 請改用真實 prompt 延遲基準：`./scripts/automation/run_benchmark_round4_response_latency.sh`
+   - 彙總時只保留有效 run：必須有 assistant 輸出，且包含 `t_prompt_ready`、`t_first_token`、`t_completion_done`。
 
 ---
 
@@ -158,7 +176,9 @@ cd /Users/dennis_leedennis_lee/Documents/GitHub/hermes_agent_setup_guide
 
 #### English
 
-Run model wizard:
+The `fast-local` profile is pre-configured to use `qwen2.5-coder:7b`. The `hermes model` wizard configures the **default (quality) profile** — run it if you need to set up `qwen32b-64k:latest` or a cloud provider.
+
+Run model wizard (for default/quality profile):
 
 ```bash
 hermes model
@@ -171,12 +191,15 @@ Choose `Custom endpoint` and fill:
 - Context length: `65536`
 
 Important:
+- Do not pass `--model` on the CLI — use `hermes profile use <name>` to switch models.
 - Avoid `hermes3` for agentic tool use.
 - If you use cloud providers instead, still run `hermes model` first and complete auth/API-key setup.
 
 #### 繁體中文
 
-執行模型設定精靈：
+`fast-local` profile 已預先設定使用 `qwen2.5-coder:7b`，不需另外配置。`hermes model` 精靈是用來設定 **default（品質）profile** 的，例如 `qwen32b-64k:latest` 或雲端供應商。
+
+執行模型設定精靈（針對 default/品質 profile）：
 
 ```bash
 hermes model
@@ -189,6 +212,7 @@ hermes model
 - Context length: `65536`
 
 重點：
+- 不要在 CLI 傳 `--model`，改用 `hermes profile use <name>` 切換模型。
 - 不建議使用 `hermes3` 做 agent 工具流程。
 - 若改用雲端供應商，也必須先完成 `hermes model` 的授權/API key 設定。
 
@@ -196,15 +220,41 @@ hermes model
 
 #### English
 
+Use separate launch commands per mode (model/toolsets are fixed at session start).
+
+1. `fast-local` with `terminal,skills`:
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` with `web,terminal,skills`:
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. Quality mode `qwen32b-64k` with `terminal,skills` (switch profile first):
+```bash
+hermes profile use default
+hermes chat --toolsets terminal,skills --max-turns 1
+# Return to fast: hermes profile use fast-local
 ```
 
-After this succeeds, scale up gradually:
+Switching between modes:
+
+1. Exit current session with `/quit`.
+2. Start the other command.
+
+Set `fast-local` as default profile (optional):
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+hermes profile use fast-local
 ```
+
+Then you can use:
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+Or change toolsets per launch.
 
 Then test session persistence:
 
@@ -215,15 +265,41 @@ hermes sessions list
 
 #### 繁體中文
 
+每個模式請分開啟動（模型與 toolsets 在 session 開始時就固定）。
+
+1. `fast-local` 搭配 `terminal,skills`：
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` 搭配 `web,terminal,skills`：
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. 品質模式 `qwen32b-64k` 搭配 `terminal,skills`（先切換 profile）：
+```bash
+hermes profile use default
+hermes chat --toolsets terminal,skills --max-turns 1
+# 切回快速：hermes profile use fast-local
 ```
 
-成功後可逐步放寬為：
+模式切換方式：
+
+1. 先在目前 session 輸入 `/quit`。
+2. 再啟動另一條指令。
+
+可選：把 `fast-local` 設為預設 profile：
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+hermes profile use fast-local
 ```
+
+之後可直接使用：
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+也可以每次啟動時切換不同 toolsets。
 
 接著測試 session 延續：
 
@@ -367,13 +443,23 @@ hermes model
 #### English
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+hermes chat --toolsets terminal,skills --max-turns 8
+```
+
+For quality/reasoning work, switch profile first:
+```bash
+hermes profile use default && hermes chat --toolsets terminal,skills --max-turns 8
 ```
 
 #### 繁體中文
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+hermes chat --toolsets terminal,skills --max-turns 8
+```
+
+需要品質模式時，先切換 profile：
+```bash
+hermes profile use default && hermes chat --toolsets terminal,skills --max-turns 8
 ```
 
 ### 3.4 Verify on Windows + WSL
@@ -538,12 +624,48 @@ npm run build
 
 ### G. Very slow responses even when startup succeeds
 
-- English: Reduce toolsets and turn budget first. Start with:
-  `hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8`
-- 繁中：先縮小 toolsets 與回合數。建議從：
-  `hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8`
+- English: First check that the fast-local profile uses the 7B model (not the 32B):
+  ```bash
+  grep default ~/.hermes/profiles/fast-local/config.yaml
+  # Should show: qwen2.5-coder:7b
+  ```
+  If it shows `qwen32b-64k`, edit the file and set `model.default: qwen2.5-coder:7b`.
+- English: Warm up Ollama before starting Hermes:
+  `ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
+- English: Reduce toolsets and turn budget:
+  `hermes chat --toolsets terminal,skills --max-turns 8`
 - English: Only add more toolsets after baseline responsiveness is confirmed.
+- English: Distinguish startup timing from interaction latency:
+  - `printf '/quit\n' | hermes ...` only measures startup/quit path.
+  - For response timing, run `./scripts/automation/run_benchmark_round4_response_latency.sh`.
+- English: Check context footprint on first slow reply.
+  - A high initial context meter can dominate first-token latency even on fast-local models.
+- English: Check config drift before comparing runs.
+  - Ensure active profile model/context match expected fast-local values.
+  - Keep toolsets fixed when comparing benchmark results.
+- English: Apply benchmark quality gates before making performance claims.
+  - Exclude runs with profile/config errors, model-load failures, or missing assistant output/timestamps.
+- 繁中：先確認 fast-local profile 使用的是 7B 模型（不是 32B）：
+  ```bash
+  grep default ~/.hermes/profiles/fast-local/config.yaml
+  # 應顯示：qwen2.5-coder:7b
+  ```
+  若顯示 `qwen32b-64k`，請編輯檔案並設為 `model.default: qwen2.5-coder:7b`。
+- 繁中：啟動 Hermes 前先預熱 Ollama：
+  `ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
+- 繁中：縮小 toolsets 與回合數：
+  `hermes chat --toolsets terminal,skills --max-turns 8`
 - 繁中：確認基礎反應速度後，再逐步增加 toolsets。
+- 繁中：區分啟動時間與互動延遲：
+  - `printf '/quit\n' | hermes ...` 只是在量啟動/退出流程。
+  - 要量回應延遲，請執行 `./scripts/automation/run_benchmark_round4_response_latency.sh`。
+- 繁中：檢查首個慢回應時的 context footprint。
+  - 若初始 context meter 偏高，即使 fast-local 也可能拖慢 first-token。
+- 繁中：比較 run 前先排除設定漂移（config drift）。
+  - 確認 active profile 的 model/context 與 fast-local 預期值一致。
+  - 比較 benchmark 結果時，toolsets 要固定一致。
+- 繁中：套用 benchmark 品質門檻後再下結論。
+  - 排除 profile/config error、model 載入失敗、或 assistant 輸出/時間戳缺失的 run。
 
 ### H. Session not resumable
 
@@ -599,14 +721,28 @@ hermes chat --resume <session_id>
 
 若 `--continue` 失敗，先列出 session 再指定 `--resume <session_id>`。
 
-If responsiveness is poor, start a fresh fast-profile session:
+If responsiveness is poor, confirm fast-local profile is active and start a fresh session:
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+hermes profile use fast-local
+hermes chat --toolsets terminal,skills --max-turns 8
 ```
 
-若反應速度仍慢，改用新的快速 profile 開新 session：
+If you need to validate real response latency (not just startup timing), run:
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+./scripts/automation/run_benchmark_round4_response_latency.sh
+```
+
+若反應速度仍慢，確認 fast-local profile 已啟用再開新 session：
+
+```bash
+hermes profile use fast-local
+hermes chat --toolsets terminal,skills --max-turns 8
+```
+
+若要驗證「真實回應延遲」（不是只有啟動時間），請執行：
+
+```bash
+./scripts/automation/run_benchmark_round4_response_latency.sh
 ```

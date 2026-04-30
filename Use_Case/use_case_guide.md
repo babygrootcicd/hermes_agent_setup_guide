@@ -29,13 +29,49 @@ hermes model
 ./scripts/common/gather_context.sh README.md docs examples/skills > /tmp/hermes_context.txt
 ```
 
-4. Start a focused session.
+4. Start a focused session (pick one mode).
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+fast-local chat --toolsets terminal,skills --max-turns 12
 ```
 
 5. Paste your task prompt + key context paths.
+
+Mode switching reference:
+
+1. `fast-local` with `terminal,skills`:
+```bash
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` with `web,terminal,skills`:
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. Quality mode `qwen32b-64k` with `terminal,skills` (`fast-local` = qwen2.5-coder:7b for speed; `default` = qwen32b-64k for quality):
+```bash
+hermes profile use default
+hermes chat --toolsets terminal,skills --max-turns 1
+# Return to fast mode: hermes profile use fast-local
+```
+
+Switching between modes:
+
+1. Exit current session with `/quit`.
+2. Start the other command.
+
+Set `fast-local` as default profile (optional):
+
+```bash
+hermes profile use fast-local
+```
+
+Then you can use:
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+Or change toolsets per launch.
 
 Minimal prompt skeleton:
 
@@ -69,10 +105,10 @@ hermes model
 ./scripts/common/gather_context.sh README.md docs examples/skills > /tmp/hermes_context.txt
 ```
 
-4. 開啟一個聚焦的對話 session。
+4. 開啟一個聚焦的對話 session（先選一個模式）。
 
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 12
+fast-local chat --toolsets terminal,skills --max-turns 12
 ```
 
 5. 貼上你的任務描述與關鍵檔案路徑。
@@ -392,8 +428,22 @@ Output a practical checklist for daily use.
 - Team has clear escalation rule to cloud model when needed.
 - Sensitive data remains local by default.
 
+### Model selection (two-profile approach)
+
+| Profile | Model | Speed | Use for |
+|---|---|---|---|
+| `fast-local` (active default) | `qwen2.5-coder:7b` | 25–60 tok/s | Routine coding, docs, quick tasks |
+| `default` | `qwen32b-64k:latest` | 2–5 tok/s | Complex reasoning, large context |
+
+Switch profiles, not models:
+```bash
+hermes profile use fast-local   # speed-first (default)
+hermes profile use default      # quality/reasoning
+```
+
 ### Common pitfalls
-- Using a model too large for local hardware.
+- Using `qwen32b-64k` for all tasks — it's 32.8B params and extremely slow on most laptops.
+- Passing `--model` on the CLI — bypasses profile context_length override and can fail at startup.
 - Sending oversized context every turn.
 - No fallback path for hard reasoning tasks.
 - Exposing local model endpoint beyond localhost without controls.
@@ -424,8 +474,22 @@ Output a practical checklist for daily use.
 - 需要時有明確升級規則（何時改用雲端模型）。
 - 預設敏感資料留在本機。
 
+#### 模型選擇（雙 profile 方案）
+
+| Profile | 模型 | 速度 | 適用情境 |
+|---|---|---|---|
+| `fast-local`（預設啟用） | `qwen2.5-coder:7b` | 25–60 tok/s | 日常 coding、文件、快速任務 |
+| `default` | `qwen32b-64k:latest` | 2–5 tok/s | 複雜推理、需要大 context |
+
+切換方式：
+```bash
+hermes profile use fast-local   # 速度優先（預設）
+hermes profile use default      # 品質/推理優先
+```
+
 #### 常見踩雷
-- 模型過大，導致本機跑不動/卡死。
+- 所有任務都用 `qwen32b-64k`：這是 32.8B 模型，在一般筆電上非常慢（3+ 分鐘）。
+- 在 CLI 傳 `--model` 參數：會跳過 profile 的 context_length 設定，導致啟動失敗。
 - 每一輪都丟超大上下文，速度變慢且不穩定。
 - 缺少「難題」的 fallback（品質掉時無路可走）。
 - 在未設防的情況下把本地模型 endpoint 暴露到 localhost 之外。

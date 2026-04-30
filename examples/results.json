@@ -1,0 +1,319 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-04-30T21:18:39+08:00",
+  "target_path": "examples/config",
+  "validation_scope": "static_config_validation",
+  "total_usecases": 8,
+  "passed": 8,
+  "failed": 0,
+  "overall_status": "pass",
+  "results": [
+    {
+      "usecase_id": "config_env_template",
+      "file": "examples/config/.env.template",
+      "test_type": "static_template_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists",
+          "status": "pass",
+          "details": "Found examples/config/.env.template."
+        },
+        {
+          "name": "non_empty",
+          "status": "pass",
+          "details": "File size is greater than zero."
+        },
+        {
+          "name": "contains_expected_placeholder_keys",
+          "status": "pass",
+          "details": "All required keys are present: GOOGLE_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN, DISCORD_BOT_TOKEN, SLACK_BOT_TOKEN, GITHUB_TOKEN."
+        },
+        {
+          "name": "all_key_lines_are_commented_no_active_secrets",
+          "status": "pass",
+          "details": "No active assignments detected for required keys (including export forms); required key entries are commented template lines."
+        }
+      ],
+      "summary": "Static template validation passed for examples/config/.env.template with all required placeholder keys present and no active secret lines."
+    },
+    {
+      "usecase_id": "config_yaml_template",
+      "file": "examples/config/config.yaml.template",
+      "test_type": "static_yaml_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_non_empty",
+          "status": "pass",
+          "details": "File exists and is non-empty."
+        },
+        {
+          "name": "yaml_parses",
+          "status": "pass",
+          "details": "YAML parsed successfully."
+        },
+        {
+          "name": "top_level_keys",
+          "status": "pass",
+          "details": "All required top-level keys are present."
+        },
+        {
+          "name": "model_context_length_numeric",
+          "status": "pass",
+          "details": "model.context_length exists and is numeric (65536)."
+        },
+        {
+          "name": "toolsets_enabled_includes_terminal_skills",
+          "status": "pass",
+          "details": "toolsets.enabled includes terminal and skills."
+        }
+      ],
+      "summary": "All static YAML validation checks passed."
+    },
+    {
+      "usecase_id": "provider_anthropic",
+      "file": "examples/config/providers/anthropic.yaml",
+      "test_type": "static_provider_config_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_and_non_empty",
+          "status": "pass",
+          "details": "File exists and is non-empty."
+        },
+        {
+          "name": "yaml_parses_successfully",
+          "status": "pass",
+          "details": "YAML parsed successfully."
+        },
+        {
+          "name": "model_provider_equals_anthropic",
+          "status": "pass",
+          "details": "model.provider is \"anthropic\"."
+        },
+        {
+          "name": "model_default_exists",
+          "status": "pass",
+          "details": "model.default key exists."
+        },
+        {
+          "name": "model_context_length_exists_and_numeric",
+          "status": "pass",
+          "details": "model.context_length is 64000 and numeric."
+        },
+        {
+          "name": "model_api_key_references_anthropic_api_key",
+          "status": "pass",
+          "details": "model.api_key is \"${ANTHROPIC_API_KEY}\"."
+        }
+      ],
+      "summary": "All required static provider configuration checks passed."
+    },
+    {
+      "usecase_id": "provider_copilot",
+      "file": "examples/config/providers/copilot.yaml",
+      "test_type": "static_provider_config_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_and_non_empty",
+          "status": "pass",
+          "details": "File exists and size is 2553 bytes."
+        },
+        {
+          "name": "yaml_parses_successfully",
+          "status": "pass",
+          "details": "YAML parsed successfully."
+        },
+        {
+          "name": "model_provider_is_copilot",
+          "status": "pass",
+          "details": "model.provider is \"copilot\"."
+        },
+        {
+          "name": "model_default_exists",
+          "status": "pass",
+          "details": "model.default exists with value \"gpt-4o\"."
+        },
+        {
+          "name": "model_context_length_exists_and_numeric",
+          "status": "pass",
+          "details": "model.context_length exists and is numeric (64000)."
+        },
+        {
+          "name": "model_api_key_absent",
+          "status": "pass",
+          "details": "No model.api_key field found (OAuth flow compliant)."
+        }
+      ],
+      "summary": "All static validation checks passed for the Copilot provider config."
+    },
+    {
+      "usecase_id": "provider_gemini_api_key",
+      "file": "examples/config/providers/gemini-api-key.yaml",
+      "test_type": "static_provider_config_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_and_non_empty",
+          "status": "pass",
+          "details": "File exists and size is 2261 bytes."
+        },
+        {
+          "name": "yaml_parses_successfully",
+          "status": "pass",
+          "details": "YAML parsed successfully."
+        },
+        {
+          "name": "model_provider_is_gemini",
+          "status": "pass",
+          "details": "model.provider is gemini."
+        },
+        {
+          "name": "model_default_exists",
+          "status": "pass",
+          "details": "model.default exists with value \"gemini-2.5-flash\"."
+        },
+        {
+          "name": "model_context_length_exists_and_numeric",
+          "status": "pass",
+          "details": "model.context_length is numeric (32768)."
+        },
+        {
+          "name": "model_api_key_references_google_api_key",
+          "status": "pass",
+          "details": "model.api_key references ${GOOGLE_API_KEY}."
+        }
+      ],
+      "summary": "All static provider config checks passed."
+    },
+    {
+      "usecase_id": "provider_gemini_oauth",
+      "file": "examples/config/providers/gemini-oauth.yaml",
+      "test_type": "static_provider_config_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_and_non_empty",
+          "status": "pass",
+          "details": "File exists and size is 2122 bytes (> 0)."
+        },
+        {
+          "name": "yaml_parses_successfully",
+          "status": "pass",
+          "details": "YAML parsed successfully via Ruby YAML.load_file with no errors."
+        },
+        {
+          "name": "model_provider_google_gemini_cli",
+          "status": "pass",
+          "details": "model.provider is \"google-gemini-cli\"."
+        },
+        {
+          "name": "model_default_exists",
+          "status": "pass",
+          "details": "model.default exists and is set to \"gemini-2.5-flash\"."
+        },
+        {
+          "name": "model_context_length_exists_and_numeric",
+          "status": "pass",
+          "details": "model.context_length exists and is numeric (32768)."
+        },
+        {
+          "name": "model_api_key_absent_for_oauth",
+          "status": "pass",
+          "details": "model.api_key field is not present."
+        }
+      ],
+      "summary": "All static validation checks passed for the Gemini OAuth provider config."
+    },
+    {
+      "usecase_id": "provider_ollama",
+      "file": "examples/config/providers/ollama.yaml",
+      "test_type": "static_provider_config_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_and_non_empty",
+          "status": "pass",
+          "details": "File exists with 4092 bytes."
+        },
+        {
+          "name": "yaml_parses_successfully",
+          "status": "pass",
+          "details": "YAML parsed successfully."
+        },
+        {
+          "name": "model_provider_is_custom",
+          "status": "pass",
+          "details": "model.provider is custom."
+        },
+        {
+          "name": "model_base_url_includes_11434_v1",
+          "status": "pass",
+          "details": "model.base_url includes 11434/v1."
+        },
+        {
+          "name": "model_api_key_is_ollama",
+          "status": "pass",
+          "details": "model.api_key is ollama."
+        },
+        {
+          "name": "model_default_exists",
+          "status": "pass",
+          "details": "model.default exists."
+        },
+        {
+          "name": "model_context_length_exists_and_numeric",
+          "status": "pass",
+          "details": "model.context_length exists and is numeric (32768)."
+        }
+      ],
+      "summary": "All static provider config checks passed."
+    },
+    {
+      "usecase_id": "provider_openrouter",
+      "file": "examples/config/providers/openrouter.yaml",
+      "test_type": "static_provider_config_validation",
+      "status": "pass",
+      "checks": [
+        {
+          "name": "file_exists_and_non_empty",
+          "status": "pass",
+          "details": "File exists and size is 3059 bytes."
+        },
+        {
+          "name": "yaml_parses_successfully",
+          "status": "pass",
+          "details": "YAML parsed without errors."
+        },
+        {
+          "name": "model_provider_openrouter",
+          "status": "pass",
+          "details": "model.provider is openrouter."
+        },
+        {
+          "name": "model_default_exists",
+          "status": "pass",
+          "details": "model.default is present."
+        },
+        {
+          "name": "model_context_length_exists_and_is_numeric",
+          "status": "pass",
+          "details": "model.context_length is numeric (32768)."
+        },
+        {
+          "name": "model_api_key_references_openrouter_api_key",
+          "status": "pass",
+          "details": "model.api_key correctly references ${OPENROUTER_API_KEY}."
+        },
+        {
+          "name": "model_site_url_and_model_app_name_exist",
+          "status": "pass",
+          "details": "Both model.site_url and model.app_name are present."
+        }
+      ],
+      "summary": "All static provider config checks passed."
+    }
+  ]
+}

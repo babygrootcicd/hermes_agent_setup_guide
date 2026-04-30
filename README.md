@@ -39,22 +39,49 @@ curl -fsS http://127.0.0.1:11434/api/tags
 ```bash
 hermes claw cleanup
 ```
-4. Select a tool-use capable model in `hermes model`:
-   - Recommended: `qwen32b-64k:latest`
+4. Select the right profile for your use case:
+   - Fast (default, `fast-local` profile): `qwen2.5-coder:7b` — 25–60 tok/s, good for routine tasks
+   - Quality (`default` profile): `qwen32b-64k:latest` — slower but stronger reasoning
    - Avoid for agentic tool workflows: `hermes3`
 
-### Safer default launch (responsive first run)
+### Launch Modes + Switching
 
+Use separate launch commands per mode (model/toolsets are fixed at session start).
+
+1. `fast-local` with `terminal,skills`:
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 8
+fast-local chat --toolsets terminal,skills --max-turns 12
+```
+2. `fast-local` with `web,terminal,skills`:
+```bash
+fast-local chat --toolsets web,terminal,skills --max-turns 12
+```
+3. Quality mode `qwen32b-64k` with `terminal,skills` (switch to default profile first):
+```bash
+hermes profile use default
+hermes chat --toolsets terminal,skills --max-turns 1
 ```
 
-Why this is faster:
-- Limits orchestration overhead (`--max-turns 8`) for first validation.
-- Restricts tool discovery to only what is needed (`terminal,skills`).
-- Avoids broad toolset loading that often causes "it responds, but very slow".
+> **Profile note**: `fast-local` (active by default) uses `qwen2.5-coder:7b` for speed. Switch to `default` profile for complex reasoning tasks that need `qwen32b-64k:latest`. Never pass `--model` on the CLI — it bypasses the profile's context_length override and can cause init failures.
 
-If this is stable, then scale up to your normal turn count and additional toolsets.
+Switching between modes:
+
+1. Exit current session with `/quit`.
+2. Start the other command.
+
+Set `fast-local` as default profile (optional):
+
+```bash
+hermes profile use fast-local
+```
+
+Then you can use:
+
+```bash
+hermes chat --toolsets terminal,skills
+```
+
+Or change toolsets per launch.
 
 ### Troubleshooting decision flow
 
@@ -65,11 +92,35 @@ If this is stable, then scale up to your normal turn count and additional toolse
 3. WSL connects inconsistently:
    - Use Windows host IP from WSL (`ip route` default gateway), not fixed localhost assumptions.
 4. Hermes starts but tool calls are poor/looping:
-   - Re-run `hermes model` and switch to `qwen32b-64k:latest`.
-5. Startup is extremely slow:
+   - Check active profile: `cat ~/.hermes/active_profile`
+   - For quality tool use, switch to `default` profile: `hermes profile use default`
+   - Or confirm the fast-local profile uses `qwen2.5-coder:7b` (not `qwen32b-64k`).
+5. Responses are extremely slow (3+ minutes):
+   - Check fast-local profile model: `grep default ~/.hermes/profiles/fast-local/config.yaml`
+   - Should be `qwen2.5-coder:7b`. If it shows `qwen32b-64k`, fix: edit `~/.hermes/profiles/fast-local/config.yaml` and set `model.default: qwen2.5-coder:7b`.
+   - Warm up Ollama before launching: `ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
+   - Do not treat startup-only timing (`printf '/quit\n' | hermes ...`) as response latency; it measures startup/quit path only.
+   - Measure real interaction latency with `scripts/automation/run_benchmark_round4_response_latency.sh` (real prompt + assistant output required).
+   - If first turn is still slow, check context footprint and config drift:
+     - Context meter at first reply (large initial payload can dominate latency).
+     - Profile/model/context values are consistent with current fast-local docs.
+6. Startup is extremely slow:
    - Start with `terminal,skills` only and low turns, then expand gradually.
-6. Desktop app fails with `posix_spawnp failed`:
+7. Desktop app fails with `posix_spawnp failed`:
    - Rebuild `node-pty` for current Electron ABI (see Troubleshooting section below).
+
+### Measure Real Interaction Latency (Round 4)
+
+Use this when validating whether fast-local is actually responsive in conversation:
+
+```bash
+./scripts/automation/run_benchmark_round4_response_latency.sh
+```
+
+Interpretation rules:
+- A valid run must include a real user prompt and assistant text (not only `/quit`).
+- Use runs that include `t_prompt_ready`, `t_first_token`, and `t_completion_done`.
+- Exclude invalid runs (profile/config errors, model load failures, or no assistant output) from summary claims.
 
 ## Repository Map
 

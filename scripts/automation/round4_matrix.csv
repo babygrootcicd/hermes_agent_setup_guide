@@ -1,0 +1,5 @@
+config_id,enabled,profile,model,context_length,toolsets,max_turns,runs,prompt,note
+fast7b_ctx16k_terminal_skills,1,fast-local,qwen2.5-coder:7b,16384,terminal+skills,1,5,Reply exactly with LATENCY_OK.,7b_baseline
+fast7b_ctx32k_terminal_skills,1,fast-local,qwen2.5-coder:7b,32768,terminal+skills,1,5,Reply exactly with LATENCY_OK.,7b_higher_context
+fastlocal_ctx65k_terminal_skills,1,fast-local,qwen2.5-coder-fast:latest,65536,terminal+skills,1,5,Reply exactly with LATENCY_OK.,fast_local_target
+qwen32b_ctx65k_terminal_skills,1,fast-local,qwen32b-64k:latest,65536,terminal+skills,1,5,Reply exactly with LATENCY_OK.,quality_baseline
