@@ -1,9 +1,12 @@
 {
-  "generated_at": "2026-04-30T21:13:58+08:00",
+  "schema_version": "1.0",
+  "generated_at": "2026-04-30T21:18:39+08:00",
   "target_path": "examples/config",
+  "validation_scope": "static_config_validation",
   "total_usecases": 8,
   "passed": 8,
   "failed": 0,
+  "overall_status": "pass",
   "results": [
     {
       "usecase_id": "config_env_template",
@@ -12,22 +15,22 @@
       "status": "pass",
       "checks": [
         {
-          "name": "file exists",
+          "name": "file_exists",
           "status": "pass",
           "details": "Found examples/config/.env.template."
         },
         {
-          "name": "non-empty",
+          "name": "non_empty",
           "status": "pass",
           "details": "File size is greater than zero."
         },
         {
-          "name": "contains expected placeholder keys",
+          "name": "contains_expected_placeholder_keys",
           "status": "pass",
           "details": "All required keys are present: GOOGLE_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN, DISCORD_BOT_TOKEN, SLACK_BOT_TOKEN, GITHUB_TOKEN."
         },
         {
-          "name": "all key lines are commented (no active secrets)",
+          "name": "all_key_lines_are_commented_no_active_secrets",
           "status": "pass",
           "details": "No active assignments detected for required keys (including export forms); required key entries are commented template lines."
         }
@@ -85,22 +88,22 @@
           "details": "YAML parsed successfully."
         },
         {
-          "name": "model.provider_equals_anthropic",
+          "name": "model_provider_equals_anthropic",
           "status": "pass",
           "details": "model.provider is \"anthropic\"."
         },
         {
-          "name": "model.default_exists",
+          "name": "model_default_exists",
           "status": "pass",
           "details": "model.default key exists."
         },
         {
-          "name": "model.context_length_exists_and_numeric",
+          "name": "model_context_length_exists_and_numeric",
           "status": "pass",
           "details": "model.context_length is 64000 and numeric."
         },
         {
-          "name": "model.api_key_references_anthropic_api_key",
+          "name": "model_api_key_references_anthropic_api_key",
           "status": "pass",
           "details": "model.api_key is \"${ANTHROPIC_API_KEY}\"."
         }
@@ -124,22 +127,22 @@
           "details": "YAML parsed successfully."
         },
         {
-          "name": "model.provider_is_copilot",
+          "name": "model_provider_is_copilot",
           "status": "pass",
           "details": "model.provider is \"copilot\"."
         },
         {
-          "name": "model.default_exists",
+          "name": "model_default_exists",
           "status": "pass",
           "details": "model.default exists with value \"gpt-4o\"."
         },
         {
-          "name": "model.context_length_exists_and_numeric",
+          "name": "model_context_length_exists_and_numeric",
           "status": "pass",
           "details": "model.context_length exists and is numeric (64000)."
         },
         {
-          "name": "model.api_key_absent",
+          "name": "model_api_key_absent",
           "status": "pass",
           "details": "No model.api_key field found (OAuth flow compliant)."
         }
@@ -275,37 +278,37 @@
       "status": "pass",
       "checks": [
         {
-          "name": "file exists and non-empty",
+          "name": "file_exists_and_non_empty",
           "status": "pass",
           "details": "File exists and size is 3059 bytes."
         },
         {
-          "name": "YAML parses successfully",
+          "name": "yaml_parses_successfully",
           "status": "pass",
           "details": "YAML parsed without errors."
         },
         {
-          "name": "model.provider == openrouter",
+          "name": "model_provider_openrouter",
           "status": "pass",
           "details": "model.provider is openrouter."
         },
         {
-          "name": "model.default exists",
+          "name": "model_default_exists",
           "status": "pass",
           "details": "model.default is present."
         },
         {
-          "name": "model.context_length exists and is numeric",
+          "name": "model_context_length_exists_and_is_numeric",
           "status": "pass",
           "details": "model.context_length is numeric (32768)."
         },
         {
-          "name": "model.api_key references ${OPENROUTER_API_KEY}",
+          "name": "model_api_key_references_openrouter_api_key",
           "status": "pass",
           "details": "model.api_key correctly references ${OPENROUTER_API_KEY}."
         },
         {
-          "name": "model.site_url and model.app_name exist",
+          "name": "model_site_url_and_model_app_name_exist",
           "status": "pass",
           "details": "Both model.site_url and model.app_name are present."
         }
