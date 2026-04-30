@@ -20,8 +20,8 @@ log('--- App Starting ---');
 let hermesProcess = null;
 let mainWin = null;
 let rawOutputLog = '';
-const repoRoot = path.resolve(__dirname, '..');
-const examplesRoot = path.join(repoRoot, 'examples');
+let repoRoot = '';
+let examplesRoot = '';
 
 function isTextFile(name) {
   return ['.md', '.yaml', '.yml', '.txt'].includes(path.extname(name).toLowerCase());
@@ -60,18 +60,49 @@ function walkFiles(dirPath, acc = []) {
   return acc;
 }
 
-function discoverTaskPresets() {
-  const tasks = [];
-  if (!fs.existsSync(examplesRoot)) return tasks;
+function hasExamplesDir(root) {
+  return !!root && fs.existsSync(path.join(root, 'examples'));
+}
 
-  const cronDir = path.join(examplesRoot, 'cron');
-  const cronPromptDir = path.join(examplesRoot, 'cron', 'prompts');
-  const skillsDir = path.join(examplesRoot, 'skills');
-  const templatesDir = path.join(examplesRoot, 'task-templates');
+function resolveRepoRoot() {
+  const homeDir = app.getPath('home');
+  const candidates = [
+    process.env.HERMES_SETUP_GUIDE_ROOT,
+    process.cwd(),
+    path.resolve(__dirname, '..'),
+    path.resolve(__dirname, '../..'),
+    path.join(homeDir, 'Documents', 'GitHub', 'hermes_agent_setup_guide'),
+    path.join(homeDir, 'Desktop', 'hermes_agent_setup_guide'),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const normalized = path.resolve(candidate);
+    if (hasExamplesDir(normalized)) return normalized;
+  }
+
+  return path.resolve(__dirname, '..');
+}
+
+function resolvePaths() {
+  repoRoot = resolveRepoRoot();
+  examplesRoot = path.join(repoRoot, 'examples');
+  return { repoRoot, examplesRoot };
+}
+
+function discoverTaskPresets() {
+  const resolved = resolvePaths();
+  const root = resolved.repoRoot;
+  const examples = resolved.examplesRoot;
+  const tasks = [];
+  if (!fs.existsSync(examples)) return tasks;
+
+  const cronDir = path.join(examples, 'cron');
+  const skillsDir = path.join(examples, 'skills');
+  const templatesDir = path.join(examples, 'task-templates');
 
   if (fs.existsSync(cronDir)) {
     for (const fullPath of walkFiles(cronDir)) {
-      const rel = path.relative(repoRoot, fullPath);
+      const rel = path.relative(root, fullPath);
       const base = path.basename(fullPath);
       if (!isTextFile(base)) continue;
       const category = rel.includes(`${path.sep}prompts${path.sep}`) ? 'Cron Prompts' : 'Cron Jobs';
@@ -88,7 +119,7 @@ function discoverTaskPresets() {
 
   if (fs.existsSync(skillsDir)) {
     for (const fullPath of walkFiles(skillsDir)) {
-      const rel = path.relative(repoRoot, fullPath);
+      const rel = path.relative(root, fullPath);
       const base = path.basename(fullPath);
       if (base !== 'SKILL.md') continue;
       const skillName = path.basename(path.dirname(fullPath));
@@ -105,7 +136,7 @@ function discoverTaskPresets() {
 
   if (fs.existsSync(templatesDir)) {
     for (const fullPath of walkFiles(templatesDir)) {
-      const rel = path.relative(repoRoot, fullPath);
+      const rel = path.relative(root, fullPath);
       const base = path.basename(fullPath);
       if (!isTextFile(base)) continue;
       tasks.push({

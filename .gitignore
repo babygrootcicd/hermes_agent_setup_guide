@@ -32,3 +32,6 @@ logs/
 Thumbs.db
 /app/dist
 *.txt
+
+# scripts
+install_gemini.sh

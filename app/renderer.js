@@ -67,6 +67,7 @@ async function loadTaskCatalog() {
     try {
         const result = await window.api.getTaskCatalog();
         if (!result?.ok) {
+            taskSelect.innerHTML = '<option value="">No presets available</option>';
             taskPath.textContent = `Failed to load presets: ${result?.error || 'unknown error'}`;
             runTaskBtn.disabled = true;
             return;
@@ -74,7 +75,9 @@ async function loadTaskCatalog() {
 
         taskCatalog = result.tasks || [];
         if (taskCatalog.length === 0) {
-            taskPath.textContent = 'No task presets found under examples/';
+            taskSelect.innerHTML = '<option value="">No presets found</option>';
+            const source = result.examplesRoot || 'examples/';
+            taskPath.textContent = `No task presets found under: ${source}`;
             runTaskBtn.disabled = true;
             return;
         }
