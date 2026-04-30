@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   resize:        (cols, rows) => ipcRenderer.send('resize-pty', { cols, rows }),
   sendMessage:   (message)    => ipcRenderer.send('send-message', message),
   exportLog:     ()           => ipcRenderer.send('export-log'),
+  getTaskCatalog: ()          => ipcRenderer.invoke('get-task-catalog'),
   onOutput: (callback) => ipcRenderer.on('hermes-output', (event, data) => callback(data)),
   onError:  (callback) => ipcRenderer.on('hermes-error',  (event, data) => callback(data)),
 });

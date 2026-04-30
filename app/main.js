@@ -20,6 +20,110 @@ log('--- App Starting ---');
 let hermesProcess = null;
 let mainWin = null;
 let rawOutputLog = '';
+const repoRoot = path.resolve(__dirname, '..');
+const examplesRoot = path.join(repoRoot, 'examples');
+
+function isTextFile(name) {
+  return ['.md', '.yaml', '.yml', '.txt'].includes(path.extname(name).toLowerCase());
+}
+
+function humanizeSlug(input) {
+  return input
+    .replace(/\.[^.]+$/, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function readPreview(filePath, maxLines = 8, maxChars = 700) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const lines = raw.split(/\r?\n/).slice(0, maxLines).join('\n');
+    return lines.slice(0, maxChars);
+  } catch {
+    return '';
+  }
+}
+
+function walkFiles(dirPath, acc = []) {
+  if (!fs.existsSync(dirPath)) return acc;
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      walkFiles(fullPath, acc);
+      continue;
+    }
+    if (entry.isFile()) acc.push(fullPath);
+  }
+  return acc;
+}
+
+function discoverTaskPresets() {
+  const tasks = [];
+  if (!fs.existsSync(examplesRoot)) return tasks;
+
+  const cronDir = path.join(examplesRoot, 'cron');
+  const cronPromptDir = path.join(examplesRoot, 'cron', 'prompts');
+  const skillsDir = path.join(examplesRoot, 'skills');
+  const templatesDir = path.join(examplesRoot, 'task-templates');
+
+  if (fs.existsSync(cronDir)) {
+    for (const fullPath of walkFiles(cronDir)) {
+      const rel = path.relative(repoRoot, fullPath);
+      const base = path.basename(fullPath);
+      if (!isTextFile(base)) continue;
+      const category = rel.includes(`${path.sep}prompts${path.sep}`) ? 'Cron Prompts' : 'Cron Jobs';
+      tasks.push({
+        id: rel.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase(),
+        title: humanizeSlug(base),
+        category,
+        filePath: fullPath,
+        relativePath: rel,
+        preview: readPreview(fullPath),
+      });
+    }
+  }
+
+  if (fs.existsSync(skillsDir)) {
+    for (const fullPath of walkFiles(skillsDir)) {
+      const rel = path.relative(repoRoot, fullPath);
+      const base = path.basename(fullPath);
+      if (base !== 'SKILL.md') continue;
+      const skillName = path.basename(path.dirname(fullPath));
+      tasks.push({
+        id: rel.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase(),
+        title: humanizeSlug(skillName),
+        category: 'Skills',
+        filePath: fullPath,
+        relativePath: rel,
+        preview: readPreview(fullPath),
+      });
+    }
+  }
+
+  if (fs.existsSync(templatesDir)) {
+    for (const fullPath of walkFiles(templatesDir)) {
+      const rel = path.relative(repoRoot, fullPath);
+      const base = path.basename(fullPath);
+      if (!isTextFile(base)) continue;
+      tasks.push({
+        id: rel.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase(),
+        title: humanizeSlug(base),
+        category: 'Task Templates',
+        filePath: fullPath,
+        relativePath: rel,
+        preview: readPreview(fullPath),
+      });
+    }
+  }
+
+  return tasks.sort((a, b) => {
+    if (a.category === b.category) return a.title.localeCompare(b.title);
+    return a.category.localeCompare(b.category);
+  });
+}
 
 function findHermes() {
   const homeDir = app.getPath('home');
@@ -55,7 +159,7 @@ function spawnHermes(win, cols, rows) {
   };
 
   try {
-    hermesProcess = pty.spawn(hermesPath, ['chat', '-Q', '--accept-hooks', '--yolo'], {
+    hermesProcess = pty.spawn(hermesPath, ['chat', '--toolsets', 'terminal,skills', '--max-turns', '20'], {
       name: 'xterm-256color',
       cols: cols || 220,
       rows: rows || 50,
@@ -92,7 +196,6 @@ function createWindow() {
   });
 
   mainWin.loadFile('index.html').catch(e => log(`Failed to load index.html: ${e.message}`));
-  mainWin.webContents.openDevTools();
 }
 
 app.on('ready', () => {
@@ -133,6 +236,16 @@ ipcMain.on('send-message', (event, message) => {
   if (hermesProcess) {
     log(`Sending message: ${message}`);
     hermesProcess.write(message + '\r');
+  }
+});
+
+ipcMain.handle('get-task-catalog', () => {
+  try {
+    const tasks = discoverTaskPresets();
+    return { ok: true, repoRoot, examplesRoot, tasks };
+  } catch (err) {
+    log(`Task catalog error: ${err.message}`);
+    return { ok: false, error: err.message, tasks: [] };
   }
 });
 

@@ -15,8 +15,22 @@
                 <button type="button" id="export-btn" class="control-btn">Export Log</button>
             </div>
         </header>
-        <main id="terminal-container">
-            <div id="terminal"></div>
+        <main id="main-layout">
+            <aside id="task-panel">
+                <h2>Everyday Tasks</h2>
+                <p class="panel-subtitle">Loaded from <code>examples/</code></p>
+                <label for="task-select">Preset</label>
+                <select id="task-select"></select>
+                <label for="task-preview">Preview</label>
+                <textarea id="task-preview" readonly></textarea>
+                <div class="task-actions">
+                    <button type="button" id="run-task-btn" class="control-btn">Run Selected Task</button>
+                </div>
+                <small id="task-path"></small>
+            </aside>
+            <section id="terminal-container">
+                <div id="terminal"></div>
+            </section>
         </main>
         <footer>
             <div class="task-controls">
