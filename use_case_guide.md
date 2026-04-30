@@ -47,9 +47,9 @@ fast-local chat --toolsets terminal,skills --max-turns 12
 ```bash
 fast-local chat --toolsets web,terminal,skills --max-turns 12
 ```
-3. Baseline `qwen32b-64k` with `terminal,skills`:
+3. Baseline `qwen32b-64k` with `terminal,skills` (uses default model from config):
 ```bash
-hermes chat --model qwen32b-64k:latest --toolsets terminal,skills --max-turns 1
+hermes chat --toolsets terminal,skills --max-turns 1
 ```
 
 Switching between modes:
