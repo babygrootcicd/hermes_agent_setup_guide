@@ -62,7 +62,26 @@ This guide covers common issues encountered while setting up or running Hermes A
     npx playwright install --with-deps
     ```
 
-## 7. Log File Analysis
+## 7. Context Window Below Minimum (Model Initialization Fails)
+
+**Symptoms**: `Failed to initialize agent: Model qwen32b-64k:latest has a context window of 16,384 tokens, which is below the minimum 64,000 required by Hermes Agent.`
+
+- **Cause**: Passing `--model <name>` on the command line triggers a fresh context window query from Ollama's API. Ollama may return the model's native architecture context length (e.g. 16,384 or 32,768) rather than the `num_ctx` you configured, bypassing the `model.context_length` override in `config.yaml`.
+- **Fix**:
+    1. If `qwen32b-64k:latest` is already your default model in `~/.hermes/config.yaml`, drop the `--model` flag entirely:
+       ```bash
+       hermes chat --toolsets terminal,skills --max-turns 1
+       ```
+    2. If you need to set it as the default, run `hermes model` and select `qwen32b-64k:latest`. Then use the command above.
+    3. Verify the context_length override is set in `~/.hermes/config.yaml`:
+       ```yaml
+       model:
+         default: qwen32b-64k:latest
+         context_length: 65536
+       ```
+    4. If the issue persists, check `~/.hermes/context_length_cache.yaml`. If the entry for `qwen32b-64k:latest` is missing or wrong, delete the file and restart Hermes so it re-queries Ollama.
+
+## 8. Log File Analysis
 
 If you are still stuck, check the logs:
 - **Hermes Logs**: Usually found in `~/.hermes/logs/` or printed to stdout if `DEBUG=true`.
