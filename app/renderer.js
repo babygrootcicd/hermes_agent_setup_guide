@@ -28,6 +28,65 @@ const taskPreview    = document.getElementById('task-preview');
 const taskPath       = document.getElementById('task-path');
 const runTaskBtn     = document.getElementById('run-task-btn');
 let taskCatalog = [];
+let catalogBasePath = '';
+const EMBEDDED_TASKS = [
+    {
+        id: 'embedded-daily-briefing',
+        title: 'Daily Briefing',
+        category: 'Cron Jobs',
+        relativePath: 'examples/cron/daily-briefing.yaml',
+        preview: 'Daily morning briefing workflow across AI, security, LLM, and scholarship topics.',
+    },
+    {
+        id: 'embedded-disk-monitor',
+        title: 'Disk Monitor',
+        category: 'Cron Jobs',
+        relativePath: 'examples/cron/disk-monitor.yaml',
+        preview: 'Every-2-hours disk usage and service uptime checks with alert thresholds.',
+    },
+    {
+        id: 'embedded-nightly-triage',
+        title: 'Nightly GitHub Triage',
+        category: 'Cron Jobs',
+        relativePath: 'examples/cron/nightly-github-triage.yaml',
+        preview: 'Nightly PR/CI/CVE audit and prioritized DevSecOps action list.',
+    },
+    {
+        id: 'embedded-weekly-study',
+        title: 'Weekly Study Review',
+        category: 'Cron Jobs',
+        relativePath: 'examples/cron/weekly-study-review.yaml',
+        preview: 'Weekly certification study review with domain coverage and drill priorities.',
+    },
+    {
+        id: 'embedded-skill-daily-briefing',
+        title: 'Skill: Daily Briefing',
+        category: 'Skills',
+        relativePath: 'examples/skills/daily-briefing/SKILL.md',
+        preview: 'Skill playbook for collecting and delivering daily topic briefings.',
+    },
+    {
+        id: 'embedded-skill-devops-monitor',
+        title: 'Skill: DevOps Monitor',
+        category: 'Skills',
+        relativePath: 'examples/skills/devops-monitor/SKILL.md',
+        preview: 'Skill workflow for uptime checks, disk triage, and incident handling.',
+    },
+    {
+        id: 'embedded-skill-pr-review',
+        title: 'Skill: GitHub PR Review',
+        category: 'Skills',
+        relativePath: 'examples/skills/github-pr-review/SKILL.md',
+        preview: 'Skill rubric for pull request auditing and risk-driven review outputs.',
+    },
+    {
+        id: 'embedded-template-feature',
+        title: 'Template: Feature Implementation',
+        category: 'Task Templates',
+        relativePath: 'examples/task-templates/feature-implementation.md',
+        preview: 'Reusable task template for scoped feature implementation and verification.',
+    },
+];
 
 // Calculate cols/rows from container pixel size
 function calcSize() {
@@ -63,44 +122,52 @@ function groupTasks(tasks) {
     return grouped;
 }
 
+function renderTaskOptions(tasks) {
+    taskSelect.innerHTML = '';
+    const grouped = groupTasks(tasks);
+    for (const [category, categoryTasks] of grouped.entries()) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = category;
+        categoryTasks.forEach((task) => {
+            const option = document.createElement('option');
+            option.value = task.id;
+            option.textContent = task.title;
+            optgroup.appendChild(option);
+        });
+        taskSelect.appendChild(optgroup);
+    }
+}
+
+function useEmbeddedFallback(reasonText) {
+    taskCatalog = EMBEDDED_TASKS.slice();
+    catalogBasePath = '';
+    renderTaskOptions(taskCatalog);
+    taskSelect.value = taskCatalog[0].id;
+    updateTaskDetails();
+    taskPath.textContent = `${taskPath.textContent} · Embedded presets (${reasonText})`;
+}
+
 async function loadTaskCatalog() {
     try {
         const result = await window.api.getTaskCatalog();
         if (!result?.ok) {
-            taskSelect.innerHTML = '<option value="">No presets available</option>';
-            taskPath.textContent = `Failed to load presets: ${result?.error || 'unknown error'}`;
-            runTaskBtn.disabled = true;
+            useEmbeddedFallback(`catalog error: ${result?.error || 'unknown error'}`);
             return;
         }
 
+        catalogBasePath = result.repoRoot || '';
         taskCatalog = result.tasks || [];
         if (taskCatalog.length === 0) {
-            taskSelect.innerHTML = '<option value="">No presets found</option>';
             const source = result.examplesRoot || 'examples/';
-            taskPath.textContent = `No task presets found under: ${source}`;
-            runTaskBtn.disabled = true;
+            useEmbeddedFallback(`no presets found under ${source}`);
             return;
         }
 
-        taskSelect.innerHTML = '';
-        const grouped = groupTasks(taskCatalog);
-        for (const [category, tasks] of grouped.entries()) {
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = category;
-            tasks.forEach((task) => {
-                const option = document.createElement('option');
-                option.value = task.id;
-                option.textContent = task.title;
-                optgroup.appendChild(option);
-            });
-            taskSelect.appendChild(optgroup);
-        }
-
+        renderTaskOptions(taskCatalog);
         taskSelect.value = taskCatalog[0].id;
         updateTaskDetails();
     } catch (err) {
-        taskPath.textContent = `Failed to load presets: ${err.message}`;
-        runTaskBtn.disabled = true;
+        useEmbeddedFallback(`exception: ${err.message}`);
     }
 }
 
@@ -164,9 +231,10 @@ runTaskBtn.addEventListener('click', () => {
     const selectedId = taskSelect.value;
     const task = taskCatalog.find((t) => t.id === selectedId);
     if (!task) return;
+    const targetPath = task.filePath || (catalogBasePath ? `${catalogBasePath}/${task.relativePath}` : task.relativePath);
 
     const message = [
-        `Run this everyday task using the repo example file: ${task.filePath}`,
+        `Run this everyday task using the repo example file: ${targetPath}`,
         `Task type: ${task.category}`,
         `Requirements:`,
         `1) Read the file and follow its workflow exactly where possible.`,
