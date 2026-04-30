@@ -25,10 +25,16 @@ if ! ollama list 2>/dev/null | grep -q "qwen2.5-coder:7b"; then
 fi
 
 echo "==> Creating ${MODEL_NAME} with num_ctx 65536..."
-ollama create "${MODEL_NAME}" -f - << 'MODELFILE'
+tmp_modelfile="$(mktemp -t ollama-modelfile.XXXXXX)"
+cleanup() { rm -f "${tmp_modelfile}"; }
+trap cleanup EXIT
+
+cat > "${tmp_modelfile}" << 'MODELFILE'
 FROM qwen2.5-coder:7b
 PARAMETER num_ctx 65536
 MODELFILE
+
+ollama create "${MODEL_NAME}" -f "${tmp_modelfile}"
 
 echo ""
 echo "==> Done. ${MODEL_NAME} is ready."
