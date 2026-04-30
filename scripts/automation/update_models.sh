@@ -12,6 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 RECOMMENDED_MODELS=(
+  "qwen2.5-coder:7b"
   "qwen32b-64k:latest"
   "qwen2.5-coder:32b"
 )

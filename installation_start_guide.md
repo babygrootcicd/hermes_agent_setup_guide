@@ -53,6 +53,9 @@ hermes claw cleanup
    - Confirm fast-local model: `grep default ~/.hermes/profiles/fast-local/config.yaml` → should show `qwen2.5-coder:7b`
    - Warm up Ollama first: `ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
    - Reduce toolsets: start with only `terminal,skills` and low `--max-turns`.
+   - Startup-only timing (for example immediate `/quit`) is not response latency.
+   - Use real-prompt latency benchmark: `./scripts/automation/run_benchmark_round4_response_latency.sh`
+   - Keep only valid benchmark runs in summaries: must include assistant output plus `t_prompt_ready`, `t_first_token`, and `t_completion_done`.
 
 ### 繁體中文
 
@@ -82,6 +85,9 @@ hermes claw cleanup
    - 確認 fast-local 模型：`grep default ~/.hermes/profiles/fast-local/config.yaml` → 應顯示 `qwen2.5-coder:7b`
    - 預熱 Ollama：`ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
    - 縮小 toolsets：先用 `terminal,skills` 與較低 `--max-turns`。
+   - 只量啟動（例如立刻送 `/quit`）不等於回應延遲。
+   - 請改用真實 prompt 延遲基準：`./scripts/automation/run_benchmark_round4_response_latency.sh`
+   - 彙總時只保留有效 run：必須有 assistant 輸出，且包含 `t_prompt_ready`、`t_first_token`、`t_completion_done`。
 
 ---
 
@@ -629,6 +635,16 @@ npm run build
 - English: Reduce toolsets and turn budget:
   `hermes chat --toolsets terminal,skills --max-turns 8`
 - English: Only add more toolsets after baseline responsiveness is confirmed.
+- English: Distinguish startup timing from interaction latency:
+  - `printf '/quit\n' | hermes ...` only measures startup/quit path.
+  - For response timing, run `./scripts/automation/run_benchmark_round4_response_latency.sh`.
+- English: Check context footprint on first slow reply.
+  - A high initial context meter can dominate first-token latency even on fast-local models.
+- English: Check config drift before comparing runs.
+  - Ensure active profile model/context match expected fast-local values.
+  - Keep toolsets fixed when comparing benchmark results.
+- English: Apply benchmark quality gates before making performance claims.
+  - Exclude runs with profile/config errors, model-load failures, or missing assistant output/timestamps.
 - 繁中：先確認 fast-local profile 使用的是 7B 模型（不是 32B）：
   ```bash
   grep default ~/.hermes/profiles/fast-local/config.yaml
@@ -640,6 +656,16 @@ npm run build
 - 繁中：縮小 toolsets 與回合數：
   `hermes chat --toolsets terminal,skills --max-turns 8`
 - 繁中：確認基礎反應速度後，再逐步增加 toolsets。
+- 繁中：區分啟動時間與互動延遲：
+  - `printf '/quit\n' | hermes ...` 只是在量啟動/退出流程。
+  - 要量回應延遲，請執行 `./scripts/automation/run_benchmark_round4_response_latency.sh`。
+- 繁中：檢查首個慢回應時的 context footprint。
+  - 若初始 context meter 偏高，即使 fast-local 也可能拖慢 first-token。
+- 繁中：比較 run 前先排除設定漂移（config drift）。
+  - 確認 active profile 的 model/context 與 fast-local 預期值一致。
+  - 比較 benchmark 結果時，toolsets 要固定一致。
+- 繁中：套用 benchmark 品質門檻後再下結論。
+  - 排除 profile/config error、model 載入失敗、或 assistant 輸出/時間戳缺失的 run。
 
 ### H. Session not resumable
 
@@ -702,9 +728,21 @@ hermes profile use fast-local
 hermes chat --toolsets terminal,skills --max-turns 8
 ```
 
+If you need to validate real response latency (not just startup timing), run:
+
+```bash
+./scripts/automation/run_benchmark_round4_response_latency.sh
+```
+
 若反應速度仍慢，確認 fast-local profile 已啟用再開新 session：
 
 ```bash
 hermes profile use fast-local
 hermes chat --toolsets terminal,skills --max-turns 8
+```
+
+若要驗證「真實回應延遲」（不是只有啟動時間），請執行：
+
+```bash
+./scripts/automation/run_benchmark_round4_response_latency.sh
 ```

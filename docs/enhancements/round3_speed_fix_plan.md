@@ -1,7 +1,7 @@
 # Round 3: Speed Fix Plan
 
 **Date**: 2026-04-30  
-**Status**: Implemented  
+**Status**: Implemented (configuration changes); real-prompt latency validation pending Round 4 benchmark harness  
 **Problem**: `hermes chat` (fast-local profile) takes 3+ minutes to respond.
 
 ---
@@ -16,6 +16,8 @@
 | Round 3 (this plan) | Revert fast-local to a small fast model with proper context config |
 
 **Core issue**: A 32.8B parameter model (`qwen32b-64k:latest`) on a MacBook causes extremely slow token generation. For a simple "hey" response, inference takes 3+ minutes because the model barely fits in unified memory and is partially CPU-offloaded.
+
+**Round 4 update**: This explains a major historical slowdown, but it is not a complete closure for current latency. Later investigation found startup-only timing and configuration/context drift can mask true interaction latency.
 
 ---
 
@@ -47,7 +49,7 @@ model:
   context_length: 65536   # satisfies Hermes 64k check; Ollama truncates at 32k for very long sessions
 ```
 
-Expected improvement: ~10–20x faster token generation for typical conversations.
+Expected improvement (hypothesis): ~10–20x faster token generation for typical conversations. This is not acceptance evidence until validated with real prompts and assistant responses.
 
 ### 2. Setup script (`scripts/macos/setup_fast_local_model.sh`)
 
@@ -61,7 +63,9 @@ After running, update the fast-local profile to `qwen2.5-coder-fast:latest`.
 
 ---
 
-## Estimated Performance After Fix
+## Estimated Performance After Fix (Pre-Round4 Validation)
+
+The table below is an estimate based on model size/runtime expectations. Treat these as planning values, not verified interaction-latency results.
 
 | Metric | Before (qwen32b) | After (qwen2.5-coder:7b) | Target |
 |---|---|---|---|
@@ -75,9 +79,10 @@ After running, update the fast-local profile to `qwen2.5-coder-fast:latest`.
 ## Two-Track Deployment
 
 **Track A (immediate)**: Profile updated to `qwen2.5-coder:7b` + `context_length: 65536`.
-- Works right now, no extra steps.
+- Applies immediately, no extra setup steps.
 - Conversations under 32k tokens work perfectly.
 - Very long sessions (>32k tokens) truncated by Ollama.
+- Response-latency fix is not considered confirmed until real-prompt benchmark gates pass.
 
 **Track B (proper, run when ready)**:
 ```bash
@@ -86,7 +91,7 @@ After running, update the fast-local profile to `qwen2.5-coder-fast:latest`.
 # model.default: qwen2.5-coder-fast:latest
 ```
 - Full 64k context support in both Hermes and Ollama.
-- Same speed as Track A.
+- Expected to have similar generation speed to Track A, pending real-prompt benchmark confirmation.
 
 ---
 
@@ -113,9 +118,11 @@ hermes chat --toolsets terminal,skills
 
 ## Benchmark Schedule
 
-Run Round 3 benchmarks after confirming fast-local is working:
+Use the Round 4 response-latency harness for acceptance benchmarking:
 ```bash
-TS=$(date +%Y%m%d_%H%M%S)_round3_fast_fix
-mkdir -p docs/enhancements/benchmarks/$TS
-/usr/bin/time -p hermes chat --toolsets terminal,skills --max-turns 1 2>&1 | tee docs/enhancements/benchmarks/$TS/chat_fast.log
+./scripts/automation/run_benchmark_round4_response_latency.sh
 ```
+
+Notes:
+- Startup-only paths (for example immediate `/quit`) do not measure real response latency.
+- Only summarize runs that include assistant output plus `t_prompt_ready`, `t_first_token`, and `t_completion_done`.

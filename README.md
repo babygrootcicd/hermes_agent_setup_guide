@@ -96,10 +96,28 @@ Or change toolsets per launch.
    - Check fast-local profile model: `grep default ~/.hermes/profiles/fast-local/config.yaml`
    - Should be `qwen2.5-coder:7b`. If it shows `qwen32b-64k`, fix: edit `~/.hermes/profiles/fast-local/config.yaml` and set `model.default: qwen2.5-coder:7b`.
    - Warm up Ollama before launching: `ollama run qwen2.5-coder:7b "" >/dev/null 2>&1 &`
+   - Do not treat startup-only timing (`printf '/quit\n' | hermes ...`) as response latency; it measures startup/quit path only.
+   - Measure real interaction latency with `scripts/automation/run_benchmark_round4_response_latency.sh` (real prompt + assistant output required).
+   - If first turn is still slow, check context footprint and config drift:
+     - Context meter at first reply (large initial payload can dominate latency).
+     - Profile/model/context values are consistent with current fast-local docs.
 6. Startup is extremely slow:
    - Start with `terminal,skills` only and low turns, then expand gradually.
 7. Desktop app fails with `posix_spawnp failed`:
    - Rebuild `node-pty` for current Electron ABI (see Troubleshooting section below).
+
+### Measure Real Interaction Latency (Round 4)
+
+Use this when validating whether fast-local is actually responsive in conversation:
+
+```bash
+./scripts/automation/run_benchmark_round4_response_latency.sh
+```
+
+Interpretation rules:
+- A valid run must include a real user prompt and assistant text (not only `/quit`).
+- Use runs that include `t_prompt_ready`, `t_first_token`, and `t_completion_done`.
+- Exclude invalid runs (profile/config errors, model load failures, or no assistant output) from summary claims.
 
 ## Repository Map
 

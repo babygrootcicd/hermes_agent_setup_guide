@@ -34,13 +34,29 @@ This guide covers common issues encountered while setting up or running Hermes A
 
 ## 4. Performance is Very Slow
 
-**Symptoms**: Agent takes a long time to respond; high CPU usage.
+**Symptoms**: Agent takes a long time to respond (for example 3+ minute first reply), even when startup succeeds.
 
-- **Cause**: The model is too large for your VRAM and is being offloaded to system RAM (CPU).
-- **Fix**:
-    - Try a smaller model (e.g., use an 8B model instead of a 70B model).
-    - If using a laptop, ensure it is plugged into power.
-    - Check VRAM usage with `nvidia-smi` (on Windows/Linux with NVIDIA GPUs).
+- **Likely causes**:
+    - Model/runtime mismatch for current hardware (large model CPU-offload, memory pressure).
+    - High first-turn context footprint (large initial prompt payload before useful work).
+    - Config drift across profile/model/context/toolsets between runs.
+    - Benchmark method measured startup/quit path instead of real interaction latency.
+- **Fix checklist**:
+    1. Confirm active profile and fast-local config values:
+       ```bash
+       cat ~/.hermes/active_profile
+       grep -E "default|context_length" ~/.hermes/profiles/fast-local/config.yaml
+       ```
+    2. Ensure fast-local model/context match current expected values (for example `qwen2.5-coder:7b` or `qwen2.5-coder-fast:latest`, with `context_length: 65536` in Hermes profile config).
+    3. Keep toolsets fixed while testing (`terminal,skills` first), and warm up Ollama before test runs.
+    4. During the first slow reply, note the context meter in the session output; unusually high initial footprint can dominate first-token latency.
+    5. Measure real interaction latency (not startup-only timing) with:
+       ```bash
+       ./scripts/automation/run_benchmark_round4_response_latency.sh
+       ```
+    6. Apply benchmark quality gates before claiming improvements:
+       - Exclude runs with profile/config errors, model-load failures, or missing assistant output.
+       - Require `t_prompt_ready`, `t_first_token`, and `t_completion_done` for every summarized run.
 
 ## 5. "hermes" Command Not Found
 
@@ -88,3 +104,13 @@ If you are still stuck, check the logs:
 - **Ollama Logs**: 
     - **macOS**: `tail -f ~/Library/Logs/Ollama/app.log`
     - **Windows**: Right-click the Ollama icon in the system tray and select "View Logs".
+
+## 9. Benchmark Looks Fast, But Chat Still Feels Slow
+
+**Symptoms**: Benchmark reports single-digit seconds, but real chat still has long delays.
+
+- **Cause**: Startup-only measurements (for example sending `/quit` immediately) do not measure model response latency.
+- **Fix**:
+    - Do not use startup/quit timing as evidence that response latency is fixed.
+    - Use `./scripts/automation/run_benchmark_round4_response_latency.sh` so each run includes a real prompt and assistant response.
+    - Compare runs only when profile/model/context/toolsets are consistent (avoid config drift).
